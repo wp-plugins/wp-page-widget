@@ -13,18 +13,18 @@ we can select which widgets to show.
 
 == Description ==
 
-This made the widget selection much easier. With this plugin activated we can select widgets to show specifically for 
-
-one page / post / or custom post type.
+This made the widget selection much easier. With this plugin activated we can select widgets to show specifically for  one page / post / or custom post type.
 
 == Installation ==
 
-1. Download the latest version from [here](http://wordpress.org/extend/plugins/wp-page-widget/), unzip it, and upload 
+1. Download the latest version from [here](http://wordpress.org/extend/plugins/wp-page-widget/), unzip it, and upload extracted files to your plugins directory.
 
-the extracted files to your plugins directory.
 2. Login to your Wordpress admin panel and activate the plugin.
+
 3. Navigate to Settings -> Page Widgets.
+
 4. Select which post type ( default post, page should be selected )
+
 5. Select which sidebar you want to appear in page editing, default should be Primary
 
 That's it
