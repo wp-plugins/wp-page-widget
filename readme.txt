@@ -31,6 +31,12 @@ That's it
 
 For more information, see the [homepage](http://codeandmore.com/products/wordpress-plugins/wp-page-widget/).
 
+== Frequently Asked Questions ==
+
+= Do I need a specific theme to use this plugin? =
+
+Every themes support widgets can use it.
+
 == Screenshots ==
 
 [Screenshots](http://codeandmore.com/products/wordpress-plugins/wp-page-widget/)
