@@ -1,6 +1,6 @@
 === WP Page Widget ===
 Contributors: CodeAndMore
-Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UHH88A8XQNWW2
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6
 Tags: widget, page, post, single, wordpress, custom post type
 Requires at least: 2.5
 Tested up to: 3.0.4
