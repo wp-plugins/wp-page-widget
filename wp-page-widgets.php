@@ -26,7 +26,7 @@ function pw_print_scripts() {
 
 	// currently this plugin just work on edit page screen.
 	if ( in_array($pagenow, array('post-new.php', 'post.php')) ) {
-		wp_enqueue_script('pw-widgets', plugin_dir_url(__FILE__) . 'assets/js/page-widgets.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), '0.1', true);
+		wp_enqueue_script('pw-widgets', plugin_dir_url(__FILE__) . 'assets/js/page-widgets.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), '1.0', true);
 	}
 }
 
@@ -35,8 +35,10 @@ function pw_print_styles() {
 
 	// currently this plugin just work on edit page screen.
 	if ( in_array($pagenow, array('post-new.php', 'post.php')) ) {
-		wp_enqueue_style('pw-widgets', plugin_dir_url(__FILE__) . 'assets/css/page-widgets.css', array(), '0.1');
+		wp_enqueue_style('pw-widgets', plugin_dir_url(__FILE__) . 'assets/css/page-widgets.css', array(), '1.0');
 	}
+
+	wp_enqueue_style('pw-style', plugin_dir_url(__FILE__) . 'assets/css/style.css', array(), '1.0');
 }
 
 function pw_admin_menu() {
@@ -62,7 +64,7 @@ function pw_settings_page() {
 		$opts = stripslashes_deep($_POST['pw_opts']);
 
 		update_option('pw_options', $opts);
-		echo '<div id="message" class="update faded"><p>Saved Changes</p></div>';
+		echo '<div id="message" class="updated fade"><p>Saved Changes</p></div>';
 	}
 
 	$opts = pw_get_settings();
@@ -71,36 +73,64 @@ function pw_settings_page() {
 <div class="wrap">
 	<h2>Settings - Page Widgets</h2>
 
-	<form action="" method="post">
-		<table class="form-table">
-			<tr>
-				<th>Available for post type</th>
-				<td>
-					<?php foreach ( $post_types as $post_type => $post_type_obj) {
-						if ( in_array($post_type, array('attachment', 'revision', 'nav_menu_item')) ) continue;
-						echo '<input type="checkbox" name="pw_opts[post_types][]" value="'.$post_type.'" '.checked(true, in_array($post_type, (array) $opts['post_types']), false).' /> '.$post_type_obj->labels->singular_name.'<br />';
-					} ?>
-				</td>
-			</tr>
-			<tr>
-				<th>Which sidebars you want to customize</th>
-				<td>
-					<?php foreach ($wp_registered_sidebars as $sidebar => $registered_sidebar) {
-						echo '<input type="checkbox" name="pw_opts[sidebars][]" value="'.$sidebar.'" '.checked(true, in_array($sidebar, (array) $opts['sidebars']), false).' /> '.$registered_sidebar['name'].'<br />';
-					} ?>
-				</td>
-			</tr>
-		</table>
-		<p class="submit">
-			<input type="submit" class="button-primary" name="save-changes" value="Save Changes" />
-		</p>
-	</form>
+	<div class="liquid-wrap">
+		<div class="liquid-left">
+			<div class="panel-left">
+				<form action="" method="post">
+					<table class="form-table">
+						<tr>
+							<th>Would you like to make a donation?</th>
+							<td>
+								<input type="radio" name="pw_opts[donation]" value="yes" <?php checked("yes", $opts['donation']) ?> /> Yes I have donated at least $5. Thank you for your nice work. And hide the donation message please. <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">Donate Now</a>.
+								<br />
+								<input type="radio" name="pw_opts[donation]" value="no" <?php checked("no", $opts['donation']) ?> /> No, I want to use this without donation.
+
+							</td>
+						</tr>
+						<tr>
+							<th>Available for post type</th>
+							<td>
+								<?php foreach ( $post_types as $post_type => $post_type_obj) {
+									if ( in_array($post_type, array('attachment', 'revision', 'nav_menu_item')) ) continue;
+									echo '<input type="checkbox" name="pw_opts[post_types][]" value="'.$post_type.'" '.checked(true, in_array($post_type, (array) $opts['post_types']), false).' /> '.$post_type_obj->labels->singular_name.'<br />';
+								} ?>
+							</td>
+						</tr>
+						<tr>
+							<th>Which sidebars you want to customize</th>
+							<td>
+								<?php foreach ($wp_registered_sidebars as $sidebar => $registered_sidebar) {
+									echo '<input type="checkbox" name="pw_opts[sidebars][]" value="'.$sidebar.'" '.checked(true, in_array($sidebar, (array) $opts['sidebars']), false).' /> '.$registered_sidebar['name'].'<br />';
+								} ?>
+							</td>
+						</tr>
+					</table>
+					<p class="submit">
+						<input type="submit" class="button-primary" name="save-changes" value="Save Changes" />
+					</p>
+				</form>
+			</div>
+		</div>
+		
+		<div class="liquid-right">
+			<div class="panel-right">
+<!--				<div class="panel-box">
+					<div class="handlediv"><br /></div>
+					<h3 class="hndle">Test</h3>
+					<div class="inside">
+						
+					</div>
+				</div>-->
+			</div>
+		</div>
+	</div>
 </div>
 	<?php
 }
 
 function pw_get_settings() {
 	$defaults = array(
+	    'donation' => 'no',
 	    'post_types' => array('post', 'page'),
 	    'sidebars' => array(),
 	);
@@ -136,6 +166,10 @@ function pw_metabox_content($post) {
 	?>
 <div class="widget-liquid-left">
 <div id="widgets-left">
+	<?php if ( $settings['donation'] != 'yes' ) {
+		echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="'.admin_url('options-general.php?page=pw-settings').'"><small>Hide this donation message</small></a>.</p></div>';
+	}?>
+
 	<div id="available-widgets" class="widgets-holder-wrap">
 		<div class="sidebar-name">
 		<div class="sidebar-name-arrow"><br /></div>
