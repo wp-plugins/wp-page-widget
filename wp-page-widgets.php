@@ -470,7 +470,7 @@ function pw_filter_widgets($sidebars_widgets) {
 	global $post, $pagenow;
 
 	if ( (is_admin() && !in_array($pagenow, array('post-new.php', 'post.php')))
-		&& !is_single()
+		|| (!is_admin() && !is_single())
 		)
 		return $sidebars_widgets;
 
