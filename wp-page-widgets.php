@@ -5,7 +5,7 @@
   Plugin URI: http://codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 1.1
+  Version: 1.0
   Author URI: http://codeandmore.com/
  */
 
@@ -20,6 +20,8 @@ add_action('wp_ajax_pw-save-widget', 'pw_ajax_save_widget');
 
 /* Filters */
 add_filter('sidebars_widgets', 'pw_filter_widgets');
+add_filter('widget_display_callback', 'pw_filter_widget_display_instance', 10, 3);
+add_filter('widget_form_callback', 'pw_filter_widget_form_instance', 10, 2);
 
 function pw_print_scripts() {
 	global $pagenow, $typenow;
@@ -317,9 +319,22 @@ function pw_ajax_save_widget() {
 				if ( !is_callable( $control['callback'] ) )
 					continue;
 
-				ob_start();
-					call_user_func_array( $control['callback'], $control['params'] );
-				ob_end_clean();
+				// do some hack
+				$number = $multi_number > 0 ? $multi_number : (int)$_POST['widget_number'];
+				$all_instance = $control['callback'][0]->get_settings();
+
+				if ( !isset($all_instance[$number]) ) { // that's mean new widget was added. => call update function to add widget (globally).
+					ob_start();
+						call_user_func_array( $control['callback'], $control['params'] );
+					ob_end_clean();
+				} else { // mean existing widget was saved. => save separate settings for each post (avoid to overwrite global existing widget data.
+					$widget_obj = &$control['callback'][0];
+					$widget_obj->option_name = 'widget_'.$post_id.'_'.$widget_obj->id_base;
+
+					ob_start();
+						call_user_func_array( $control['callback'], $control['params'] );
+					ob_end_clean();
+				}
 				break;
 			}
 		}
@@ -350,111 +365,113 @@ function pw_set_sidebars_widgets($sidebars_widgets, $post_id) {
 
 
 /* Use this to get sidebars widgets */
-function pw_get_sidebars_widgets($deprecated = true) {
-	if ( $deprecated !== true )
-		_deprecated_argument( __FUNCTION__, '2.8.1' );
-
-	global $post, $wp_registered_widgets, $wp_registered_sidebars, $_wp_sidebars_widgets;
-
-	// If loading from front page, consult $_wp_sidebars_widgets rather than options
-	// to see if wp_convert_widget_settings() has made manipulations in memory.
-	if ( !is_admin() ) {
-		if ( empty($_wp_sidebars_widgets) ) {
-			$_wp_sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
-			if ( empty($_wp_sidebars_widgets) )
-			$_wp_sidebars_widgets = get_option('sidebars_widgets', array());
-		}
-
-		$sidebars_widgets = $_wp_sidebars_widgets;
-	} else {
-		$sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
-		if ( empty($sidebars_widgets) )
-			$sidebars_widgets = get_option('sidebars_widgets', array());
-		$_sidebars_widgets = array();
-
-		if ( isset($sidebars_widgets['wp_inactive_widgets']) || empty($sidebars_widgets) )
-			$sidebars_widgets['array_version'] = 3;
-		elseif ( !isset($sidebars_widgets['array_version']) )
-			$sidebars_widgets['array_version'] = 1;
-
-		switch ( $sidebars_widgets['array_version'] ) {
-			case 1 :
-				foreach ( (array) $sidebars_widgets as $index => $sidebar )
-				if ( is_array($sidebar) )
-				foreach ( (array) $sidebar as $i => $name ) {
-					$id = strtolower($name);
-					if ( isset($wp_registered_widgets[$id]) ) {
-						$_sidebars_widgets[$index][$i] = $id;
-						continue;
-					}
-					$id = sanitize_title($name);
-					if ( isset($wp_registered_widgets[$id]) ) {
-						$_sidebars_widgets[$index][$i] = $id;
-						continue;
-					}
-
-					$found = false;
-
-					foreach ( $wp_registered_widgets as $widget_id => $widget ) {
-						if ( strtolower($widget['name']) == strtolower($name) ) {
-							$_sidebars_widgets[$index][$i] = $widget['id'];
-							$found = true;
-							break;
-						} elseif ( sanitize_title($widget['name']) == sanitize_title($name) ) {
-							$_sidebars_widgets[$index][$i] = $widget['id'];
-							$found = true;
-							break;
-						}
-					}
-
-					if ( $found )
-						continue;
-
-					unset($_sidebars_widgets[$index][$i]);
-				}
-				$_sidebars_widgets['array_version'] = 2;
-				$sidebars_widgets = $_sidebars_widgets;
-				unset($_sidebars_widgets);
-
-			case 2 :
-				$sidebars = array_keys( $wp_registered_sidebars );
-				if ( !empty( $sidebars ) ) {
-					// Move the known-good ones first
-					foreach ( (array) $sidebars as $id ) {
-						if ( array_key_exists( $id, $sidebars_widgets ) ) {
-							$_sidebars_widgets[$id] = $sidebars_widgets[$id];
-							unset($sidebars_widgets[$id], $sidebars[$id]);
-						}
-					}
-
-					// move the rest to wp_inactive_widgets
-					if ( !isset($_sidebars_widgets['wp_inactive_widgets']) )
-						$_sidebars_widgets['wp_inactive_widgets'] = array();
-
-					if ( !empty($sidebars_widgets) ) {
-						foreach ( $sidebars_widgets as $lost => $val ) {
-							if ( is_array($val) )
-								$_sidebars_widgets['wp_inactive_widgets'] = array_merge( (array) $_sidebars_widgets['wp_inactive_widgets'], $val );
-						}
-					}
-
-					$sidebars_widgets = $_sidebars_widgets;
-					unset($_sidebars_widgets);
-				}
-		}
-	}
-
-	if ( is_array( $sidebars_widgets ) && isset($sidebars_widgets['array_version']) )
-		unset($sidebars_widgets['array_version']);
-
-	$sidebars_widgets = apply_filters('sidebars_widgets', $sidebars_widgets);
-	return $sidebars_widgets;
-}
+//function pw_get_sidebars_widgets($deprecated = true) {
+//	if ( $deprecated !== true )
+//		_deprecated_argument( __FUNCTION__, '2.8.1' );
+//
+//	global $post, $wp_registered_widgets, $wp_registered_sidebars, $_wp_sidebars_widgets;
+//
+//	// If loading from front page, consult $_wp_sidebars_widgets rather than options
+//	// to see if wp_convert_widget_settings() has made manipulations in memory.
+//	if ( !is_admin() ) {
+//		if ( empty($_wp_sidebars_widgets) ) {
+//			$_wp_sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
+//			if ( empty($_wp_sidebars_widgets) )
+//			$_wp_sidebars_widgets = get_option('sidebars_widgets', array());
+//		}
+//
+//		$sidebars_widgets = $_wp_sidebars_widgets;
+//	} else {
+//		$sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
+//		if ( empty($sidebars_widgets) )
+//			$sidebars_widgets = get_option('sidebars_widgets', array());
+//		$_sidebars_widgets = array();
+//
+//		if ( isset($sidebars_widgets['wp_inactive_widgets']) || empty($sidebars_widgets) )
+//			$sidebars_widgets['array_version'] = 3;
+//		elseif ( !isset($sidebars_widgets['array_version']) )
+//			$sidebars_widgets['array_version'] = 1;
+//
+//		switch ( $sidebars_widgets['array_version'] ) {
+//			case 1 :
+//				foreach ( (array) $sidebars_widgets as $index => $sidebar )
+//				if ( is_array($sidebar) )
+//				foreach ( (array) $sidebar as $i => $name ) {
+//					$id = strtolower($name);
+//					if ( isset($wp_registered_widgets[$id]) ) {
+//						$_sidebars_widgets[$index][$i] = $id;
+//						continue;
+//					}
+//					$id = sanitize_title($name);
+//					if ( isset($wp_registered_widgets[$id]) ) {
+//						$_sidebars_widgets[$index][$i] = $id;
+//						continue;
+//					}
+//
+//					$found = false;
+//
+//					foreach ( $wp_registered_widgets as $widget_id => $widget ) {
+//						if ( strtolower($widget['name']) == strtolower($name) ) {
+//							$_sidebars_widgets[$index][$i] = $widget['id'];
+//							$found = true;
+//							break;
+//						} elseif ( sanitize_title($widget['name']) == sanitize_title($name) ) {
+//							$_sidebars_widgets[$index][$i] = $widget['id'];
+//							$found = true;
+//							break;
+//						}
+//					}
+//
+//					if ( $found )
+//						continue;
+//
+//					unset($_sidebars_widgets[$index][$i]);
+//				}
+//				$_sidebars_widgets['array_version'] = 2;
+//				$sidebars_widgets = $_sidebars_widgets;
+//				unset($_sidebars_widgets);
+//
+//			case 2 :
+//				$sidebars = array_keys( $wp_registered_sidebars );
+//				if ( !empty( $sidebars ) ) {
+//					// Move the known-good ones first
+//					foreach ( (array) $sidebars as $id ) {
+//						if ( array_key_exists( $id, $sidebars_widgets ) ) {
+//							$_sidebars_widgets[$id] = $sidebars_widgets[$id];
+//							unset($sidebars_widgets[$id], $sidebars[$id]);
+//						}
+//					}
+//
+//					// move the rest to wp_inactive_widgets
+//					if ( !isset($_sidebars_widgets['wp_inactive_widgets']) )
+//						$_sidebars_widgets['wp_inactive_widgets'] = array();
+//
+//					if ( !empty($sidebars_widgets) ) {
+//						foreach ( $sidebars_widgets as $lost => $val ) {
+//							if ( is_array($val) )
+//								$_sidebars_widgets['wp_inactive_widgets'] = array_merge( (array) $_sidebars_widgets['wp_inactive_widgets'], $val );
+//						}
+//					}
+//
+//					$sidebars_widgets = $_sidebars_widgets;
+//					unset($_sidebars_widgets);
+//				}
+//		}
+//	}
+//
+//	if ( is_array( $sidebars_widgets ) && isset($sidebars_widgets['array_version']) )
+//		unset($sidebars_widgets['array_version']);
+//
+//	$sidebars_widgets = apply_filters('sidebars_widgets', $sidebars_widgets);
+//	return $sidebars_widgets;
+//}
 
 function pw_filter_widgets($sidebars_widgets) {
 	global $post, $pagenow;
 
-	if ( ( !is_admin() && !is_singular() ) && ( is_admin() && !in_array($pagenow, array('post-new.php', 'post.php')) ) )
+	if ( (is_admin() && !in_array($pagenow, array('post-new.php', 'post.php')))
+		&& !is_single()
+		)
 		return $sidebars_widgets;
 
 	$_sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
@@ -467,5 +484,35 @@ function pw_filter_widgets($sidebars_widgets) {
 	}
 
 	return $sidebars_widgets;
+}
+
+function pw_filter_widget_display_instance($instance, $widget, $args) {
+	global $post;
+
+	if ( is_single() ) {
+		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
+
+		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
+
+			$instance = $widget_instance[$widget->number];
+		}
+	}
+
+	return $instance;
+}
+
+function pw_filter_widget_form_instance($instance, $widget) {
+	global $post, $pagenow;
+
+	if ( (is_admin() && in_array($pagenow, array('post-new.php', 'post.php'))) ) {
+		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
+
+		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
+
+			$instance = $widget_instance[$widget->number];
+		}
+	}
+
+	return $instance;
 }
 ?>
