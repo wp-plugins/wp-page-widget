@@ -3,12 +3,10 @@ Contributors: CodeAndMore
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6
 Tags: widget, page, post, single, wordpress, custom post type
 Requires at least: 2.5
-Tested up to: 3.0.4
-Stable tag: 1.0
+Tested up to: 3.1.1
+Stable tag: 1.1
 
-Select widgets for each page / post / custom post type. For every single page / post / custom post type 
-
-we can select which widgets to show. 
+Select widgets for each page / post / custom post type. For every single page / post / custom post type we can select which widgets to show. 
 
 
 == Description ==
@@ -43,5 +41,7 @@ Every themes support widgets can use it.
 
 
 == Changelog ==
+= 1.1 (2011-04-19) =
+* Fix issue with widget saving
 = 1.0 (2011-01-27) =
 * Start presenting to community

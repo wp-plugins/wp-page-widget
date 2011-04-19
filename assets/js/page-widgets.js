@@ -201,7 +201,7 @@ wpPWidgets = {
 		if ( del )
 			a['delete_widget'] = 1;
 
-		data = widget.find('input[type=text], input[type=hidden], input[type=checkbox], textarea, selected').map(function() { return encodeURI($(this).attr('name') || $(this).parent().attr('name')) + '=' + $(this).val(); }).get().join('&');
+		data = widget.find('input[type=text], input[type=password] , input[type=hidden], input[type=radio], input[type=checkbox]:checked, textarea, select option:selected').map(function() { return encodeURI($(this).attr('name') || $(this).parent().attr('name')) + '=' + $(this).val(); }).get().join('&');
 		data += '&' + $.param(a);
 
 		$.post( ajaxurl, data, function(r){

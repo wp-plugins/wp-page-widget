@@ -452,7 +452,7 @@ function pw_get_sidebars_widgets($deprecated = true) {
 }
 
 function pw_filter_widgets($sidebars_widgets) {
-	global $post;
+	global $post, $pagenow;
 
 	if ( ( !is_admin() && !is_singular() ) && ( is_admin() && !in_array($pagenow, array('post-new.php', 'post.php')) ) )
 		return $sidebars_widgets;
@@ -461,9 +461,9 @@ function pw_filter_widgets($sidebars_widgets) {
 
 	if ( !empty($_sidebars_widgets) ) {
 		if ( is_array( $_sidebars_widgets ) && isset($_sidebars_widgets['array_version']) )
-		unset($_sidebars_widgets['array_version']);
+			unset($_sidebars_widgets['array_version']);
 
-		$sidebars_widgets = array_merge($sidebars_widgets, $_sidebars_widgets);
+		$sidebars_widgets = wp_parse_args($_sidebars_widgets, $sidebars_widgets);
 	}
 
 	return $sidebars_widgets;
