@@ -5,7 +5,7 @@
   Plugin URI: http://codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 1.0
+  Version: 1.1
   Author URI: http://codeandmore.com/
  */
 
