@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: widget, page, post, single, wordpress, custom post type
 Requires at least: 2.5
 Tested up to: 3.1.1
-Stable tag: 1.1
+Stable tag: trunk
 
 Select widgets for each page / post / custom post type. For every single page / post / custom post type 
 
