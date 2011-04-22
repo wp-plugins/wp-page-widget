@@ -9,7 +9,10 @@
   Author URI: http://codeandmore.com/
  */
 
+define('PAGE_WIDGET_VERSION', '1.1');
+
 /* Hooks */
+add_action('admin_init', 'pw_init');
 add_action('admin_print_scripts', 'pw_print_scripts');
 add_action('admin_print_styles', 'pw_print_styles');
 add_action('admin_menu', 'pw_admin_menu');
@@ -17,11 +20,37 @@ add_action('admin_menu', 'pw_admin_menu');
 /* AJAX Hooks */
 add_action('wp_ajax_pw-widgets-order', 'pw_ajax_widgets_order');
 add_action('wp_ajax_pw-save-widget', 'pw_ajax_save_widget');
+add_action('wp_ajax_pw-toggle-customize', 'pw_ajax_toggle_customize');
+add_action('wp_ajax_pw-reset-customize', 'pw_ajax_reset_customize');
 
 /* Filters */
 add_filter('sidebars_widgets', 'pw_filter_widgets');
 add_filter('widget_display_callback', 'pw_filter_widget_display_instance', 10, 3);
 add_filter('widget_form_callback', 'pw_filter_widget_form_instance', 10, 2);
+
+function pw_init() {
+	global $wpdb;
+
+	$current_version = get_option('page_widget_version', '1.0');
+	$upgraded = false;
+
+	if ( version_compare($current_version, '1.1', '<') ) {
+		// we set enable customize sidebars for posts which hve been customized before.
+		$post_ids = $wpdb->get_col($wpdb->prepare("SELECT post_id FROM $wpdb->postmeta WHERE meta_key LIKE %s", '_sidebars_widgets'));
+
+		if ( !empty($post_ids) ) {
+			foreach ($post_ids as $post_id) {
+				update_post_meta($post_id, '_customize_sidebars', 'yes');
+			}
+		}
+
+		$upgraded = true;
+	}
+
+	if ( $upgraded ) {
+		update_option('page_widget_version', PAGE_WIDGET_VERSION);
+	}
+}
 
 function pw_print_scripts() {
 	global $pagenow, $typenow;
@@ -162,71 +191,126 @@ function pw_metabox_content($post) {
 		$sidebars_widgets = wp_get_widget_defaults();
 
 
+	$customize = get_post_meta($post->ID, '_customize_sidebars', true);
+	$pw_class = $customize == 'yes' ? 'pw-show' : 'pw-hide';
+
 	// include widgets function
 	if ( !function_exists('wp_list_widgets') )
 		require_once(ABSPATH . '/wp-admin/includes/widgets.php');
 	?>
-<div class="widget-liquid-left">
-<div id="widgets-left">
+<form style="display: none;" action="" method="post"></form>
+
+<div style="padding: 5px;">
 	<?php if ( $settings['donation'] != 'yes' ) {
 		echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="'.admin_url('options-general.php?page=pw-settings').'"><small>Hide this donation message</small></a>.</p></div>';
 	}?>
-
-	<div id="available-widgets" class="widgets-holder-wrap">
-		<div class="sidebar-name">
-		<div class="sidebar-name-arrow"><br /></div>
-		<h3><?php _e('Available Widgets'); ?> <span id="removing-widget"><?php _e('Deactivate'); ?> <span></span></span></h3></div>
-		<div class="widget-holder">
-		<p class="description"><?php _e('Drag widgets from here to a sidebar on the right to activate them. Drag widgets back here to deactivate them and delete their settings.'); ?></p>
-		<div id="widget-list">
-		<?php wp_list_widgets(); ?>
-		</div>
-		<br class='clear' />
-		</div>
-		<br class="clear" />
-	</div>
-
-	<div class="widgets-holder-wrap">
-		<div class="sidebar-name">
-		<div class="sidebar-name-arrow"><br /></div>
-		<h3><?php _e('Inactive Widgets'); ?>
-		<span><img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3></div>
-		<div class="widget-holder inactive">
-		<p class="description"><?php _e('Drag widgets here to remove them from the sidebar but keep their settings.'); ?></p>
-		<?php wp_list_widget_controls('wp_inactive_widgets'); ?>
-		<br class="clear" />
-		</div>
-	</div>
-</div>
 </div>
 
-<div class="widget-liquid-right">
-<div id="widgets-right">
-<?php
-$i = 0;
-foreach ( $wp_registered_sidebars as $sidebar => $registered_sidebar ) {
-	if ( 'wp_inactive_widgets' == $sidebar )
-		continue;
-	if (  !in_array($sidebar, $settings['sidebars']) )
-		continue;
-	$closed = $i ? ' closed' : ''; ?>
-	<div class="widgets-holder-wrap<?php echo $closed; ?>">
-	<div class="sidebar-name">
-	<div class="sidebar-name-arrow"><br /></div>
-	<h3><?php echo esc_html( $registered_sidebar['name'] ); ?>
-	<span><img src="<?php echo esc_url( admin_url( 'images/wpspin_dark.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3></div>
-	<?php wp_list_widget_controls( $sidebar ); // Show the control forms for each of the widgets in this sidebar ?>
+<div style="padding: 5px;">
+	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>
+	<a id="pw-button-reset" href="#">Reset</a>
+	<br class="clear" />
+</div>
+
+<div id="pw-sidebars-customize" class="<?php echo $pw_class ?>-panel" >
+	<input type="hidden" name="pw-sidebar-customize" value="0" />
+
+	<div class="widget-liquid-left">
+	<div id="widgets-left">
+		<div id="available-widgets" class="widgets-holder-wrap">
+			<div class="sidebar-name">
+				<div class="sidebar-name-arrow"><br /></div>
+				<h3><?php _e('Available Widgets'); ?> <span id="removing-widget"><?php _e('Deactivate'); ?> <span></span></span></h3>
+			</div>
+			<div class="widget-holder">
+				<p class="description"><?php _e('Drag widgets from here to a sidebar on the right to activate them. Drag widgets back here to deactivate them and delete their settings.'); ?></p>
+				<div id="widget-list">
+				<?php wp_list_widgets(); ?>
+				</div>
+				<br class='clear' />
+			</div>
+			<br class="clear" />
+		</div>
+
+		<div class="widgets-holder-wrap">
+			<div class="sidebar-name">
+				<div class="sidebar-name-arrow"><br /></div>
+				<h3><?php _e('Inactive Widgets'); ?>
+				<span><img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3>
+			</div>
+			<div class="widget-holder inactive">
+				<p class="description"><?php _e('Drag widgets here to remove them from the sidebar but keep their settings.'); ?></p>
+				<?php wp_list_widget_controls('wp_inactive_widgets'); ?>
+				<br class="clear" />
+			</div>
+		</div>
 	</div>
-<?php
-	$i++;
-} ?>
-</div>
-</div>
-<form action="" method="post">
-<?php wp_nonce_field( 'save-sidebar-widgets', '_wpnonce_widgets', false ); ?>
-</form>
-<br class="clear" />
+	</div>
+
+	<div class="widget-liquid-right">
+	<div id="widgets-right">
 	<?php
+	$i = 0;
+	foreach ( $wp_registered_sidebars as $sidebar => $registered_sidebar ) {
+		if ( 'wp_inactive_widgets' == $sidebar )
+			continue;
+		if (  !in_array($sidebar, $settings['sidebars']) )
+			continue;
+		$closed = $i ? ' closed' : ''; ?>
+		<div class="widgets-holder-wrap<?php echo $closed; ?>">
+			<div class="sidebar-name">
+				<div class="sidebar-name-arrow"><br /></div>
+				<h3><?php echo esc_html( $registered_sidebar['name'] ); ?>
+				<span><img src="<?php echo esc_url( admin_url( 'images/wpspin_dark.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3>
+			</div>
+			<?php wp_list_widget_controls( $sidebar ); // Show the control forms for each of the widgets in this sidebar ?>
+		</div>
+	<?php
+		$i++;
+	} ?>
+	</div>
+	</div>
+
+	<form action="" method="post">
+	<?php wp_nonce_field( 'save-sidebar-widgets', '_wpnonce_widgets', false ); ?>
+	</form>
+	<br class="clear" />
+
+</div><!-- End #pw-sidebars-customize -->
+	<?php
+}
+
+function pw_ajax_toggle_customize() {
+	$status = stripslashes($_POST['status']);
+	$post_id = (int) $_POST['post_id'];
+	$status = ($status == 'customize' ? 'yes' : 'no');
+
+	$post_type = get_post_type($post_id);
+	$post_type_object = get_post_type_object( $post_type );
+
+	if ( current_user_can($post_type_object->cap->edit_posts) ) {
+		update_post_meta($post_id, '_customize_sidebars', $status);
+		echo 1;
+	}
+
+	exit(0);
+}
+
+function pw_ajax_reset_customize() {
+	global $wpdb;
+
+	$post_id = (int) $_POST['post_id'];
+
+	$post_type = get_post_type($post_id);
+	$post_type_object = get_post_type_object( $post_type );
+
+	if ( current_user_can($post_type_object->cap->edit_posts) ) {
+		delete_post_meta($post_id, '_sidebars_widgets');
+		$wpdb->query($wpdb->prepare("DELETE FROM $wpdb->options WHERE option_name LIKE 'widget_{$post_id}_%%'"));
+		echo 1;
+	}
+
+	exit(0);
 }
 
 function pw_ajax_widgets_order() {
@@ -363,109 +447,6 @@ function pw_set_sidebars_widgets($sidebars_widgets, $post_id) {
 	update_post_meta($post_id, '_sidebars_widgets', $sidebars_widgets);
 }
 
-
-/* Use this to get sidebars widgets */
-//function pw_get_sidebars_widgets($deprecated = true) {
-//	if ( $deprecated !== true )
-//		_deprecated_argument( __FUNCTION__, '2.8.1' );
-//
-//	global $post, $wp_registered_widgets, $wp_registered_sidebars, $_wp_sidebars_widgets;
-//
-//	// If loading from front page, consult $_wp_sidebars_widgets rather than options
-//	// to see if wp_convert_widget_settings() has made manipulations in memory.
-//	if ( !is_admin() ) {
-//		if ( empty($_wp_sidebars_widgets) ) {
-//			$_wp_sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
-//			if ( empty($_wp_sidebars_widgets) )
-//			$_wp_sidebars_widgets = get_option('sidebars_widgets', array());
-//		}
-//
-//		$sidebars_widgets = $_wp_sidebars_widgets;
-//	} else {
-//		$sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
-//		if ( empty($sidebars_widgets) )
-//			$sidebars_widgets = get_option('sidebars_widgets', array());
-//		$_sidebars_widgets = array();
-//
-//		if ( isset($sidebars_widgets['wp_inactive_widgets']) || empty($sidebars_widgets) )
-//			$sidebars_widgets['array_version'] = 3;
-//		elseif ( !isset($sidebars_widgets['array_version']) )
-//			$sidebars_widgets['array_version'] = 1;
-//
-//		switch ( $sidebars_widgets['array_version'] ) {
-//			case 1 :
-//				foreach ( (array) $sidebars_widgets as $index => $sidebar )
-//				if ( is_array($sidebar) )
-//				foreach ( (array) $sidebar as $i => $name ) {
-//					$id = strtolower($name);
-//					if ( isset($wp_registered_widgets[$id]) ) {
-//						$_sidebars_widgets[$index][$i] = $id;
-//						continue;
-//					}
-//					$id = sanitize_title($name);
-//					if ( isset($wp_registered_widgets[$id]) ) {
-//						$_sidebars_widgets[$index][$i] = $id;
-//						continue;
-//					}
-//
-//					$found = false;
-//
-//					foreach ( $wp_registered_widgets as $widget_id => $widget ) {
-//						if ( strtolower($widget['name']) == strtolower($name) ) {
-//							$_sidebars_widgets[$index][$i] = $widget['id'];
-//							$found = true;
-//							break;
-//						} elseif ( sanitize_title($widget['name']) == sanitize_title($name) ) {
-//							$_sidebars_widgets[$index][$i] = $widget['id'];
-//							$found = true;
-//							break;
-//						}
-//					}
-//
-//					if ( $found )
-//						continue;
-//
-//					unset($_sidebars_widgets[$index][$i]);
-//				}
-//				$_sidebars_widgets['array_version'] = 2;
-//				$sidebars_widgets = $_sidebars_widgets;
-//				unset($_sidebars_widgets);
-//
-//			case 2 :
-//				$sidebars = array_keys( $wp_registered_sidebars );
-//				if ( !empty( $sidebars ) ) {
-//					// Move the known-good ones first
-//					foreach ( (array) $sidebars as $id ) {
-//						if ( array_key_exists( $id, $sidebars_widgets ) ) {
-//							$_sidebars_widgets[$id] = $sidebars_widgets[$id];
-//							unset($sidebars_widgets[$id], $sidebars[$id]);
-//						}
-//					}
-//
-//					// move the rest to wp_inactive_widgets
-//					if ( !isset($_sidebars_widgets['wp_inactive_widgets']) )
-//						$_sidebars_widgets['wp_inactive_widgets'] = array();
-//
-//					if ( !empty($sidebars_widgets) ) {
-//						foreach ( $sidebars_widgets as $lost => $val ) {
-//							if ( is_array($val) )
-//								$_sidebars_widgets['wp_inactive_widgets'] = array_merge( (array) $_sidebars_widgets['wp_inactive_widgets'], $val );
-//						}
-//					}
-//
-//					$sidebars_widgets = $_sidebars_widgets;
-//					unset($_sidebars_widgets);
-//				}
-//		}
-//	}
-//
-//	if ( is_array( $sidebars_widgets ) && isset($sidebars_widgets['array_version']) )
-//		unset($sidebars_widgets['array_version']);
-//
-//	$sidebars_widgets = apply_filters('sidebars_widgets', $sidebars_widgets);
-//	return $sidebars_widgets;
-//}
-
 function pw_filter_widgets($sidebars_widgets) {
 	global $post, $pagenow;
 
@@ -474,9 +455,10 @@ function pw_filter_widgets($sidebars_widgets) {
 		)
 		return $sidebars_widgets;
 
+	$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
 	$_sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
 
-	if ( !empty($_sidebars_widgets) ) {
+	if ( $enable_customize == 'yes' && !empty($_sidebars_widgets) ) {
 		if ( is_array( $_sidebars_widgets ) && isset($_sidebars_widgets['array_version']) )
 			unset($_sidebars_widgets['array_version']);
 
@@ -489,7 +471,9 @@ function pw_filter_widgets($sidebars_widgets) {
 function pw_filter_widget_display_instance($instance, $widget, $args) {
 	global $post;
 
-	if ( is_single() ) {
+	$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
+
+	if ( $enable_customize == 'yes' &&  is_single() ) {
 		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
 
 		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
@@ -504,7 +488,9 @@ function pw_filter_widget_display_instance($instance, $widget, $args) {
 function pw_filter_widget_form_instance($instance, $widget) {
 	global $post, $pagenow;
 
-	if ( (is_admin() && in_array($pagenow, array('post-new.php', 'post.php'))) ) {
+	$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
+
+	if ( $enable_customize == 'yes' && (is_admin() && in_array($pagenow, array('post-new.php', 'post.php'))) ) {
 		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
 
 		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {

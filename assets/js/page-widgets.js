@@ -187,7 +187,7 @@ wpPWidgets = {
 	},
 
 	save : function(widget, del, animate, order) {
-		var sb = widget.closest('div.widgets-sortables').attr('id'), data, a;
+		var sb = widget.closest('div.widgets-sortables').attr('id'), data = widget.find('form').serialize(), a;
 		widget = $(widget);
 		$('.ajax-feedback', widget).css('visibility', 'visible');
 
@@ -201,7 +201,6 @@ wpPWidgets = {
 		if ( del )
 			a['delete_widget'] = 1;
 
-		data = widget.find('input[type=text], input[type=password] , input[type=hidden], input[type=radio], input[type=checkbox]:checked, textarea, select option:selected').map(function() { return encodeURI($(this).attr('name') || $(this).parent().attr('name')) + '=' + $(this).val(); }).get().join('&');
 		data += '&' + $.param(a);
 
 		$.post( ajaxurl, data, function(r){
@@ -279,6 +278,36 @@ wpPWidgets = {
 	}
 };
 
-$(document).ready(function($){ wpPWidgets.init(); });
+$(document).ready(function($){
+	wpPWidgets.init();
+
+	$('#pw-button-customize').click(function(e) {
+		var t = this;
+		var post_id = $('#post_ID').val();
+
+		$.post(ajaxurl, {action: 'pw-toggle-customize', post_id: post_id, status: e.target.className}, function() {
+			$(t).toggleClass('pw-show pw-hide');
+			$('#pw-sidebars-customize').toggleClass('pw-show-panel pw-hide-panel');
+		});
+
+		return false;
+	});
+
+	$('#pw-button-reset').click(function(e) {
+		var post_id = $("#post_ID").val();
+
+		if ( confirm('You request to reset your changes to default. This action can not be undo. Please confirm that you are sure to do this?') ) {
+			$.post(ajaxurl, {action: 'pw-reset-customize', post_id: post_id}, function(r) {
+				if ( r == '1' ) {
+					if ( confirm('Reset successfully. You need to reload the page to retrieve new data. Do you want to reload now?') ) {
+						window.location.reload(true);
+					}
+				}
+			});
+		}
+
+		return false;
+	});
+});
 
 })(jQuery);

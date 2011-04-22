@@ -1,8 +1,3 @@
-html,
-body {
-	min-width: 950px;
-}
-
 /* 2 column liquid layout */
 div.widget-liquid-left {
 	float: left;
@@ -85,7 +80,7 @@ div.sidebar-name {
 #widgets-left .widget-holder {
 	border-width: 0 1px 1px;
 	border-style: none solid solid;
-    -moz-border-radius-bottomleft: 8px;
+	-moz-border-radius-bottomleft: 8px;
 	-moz-border-radius-bottomright: 8px;
 	-webkit-border-bottom-right-radius: 8px;
 	-webkit-border-bottom-left-radius: 8px;
@@ -113,8 +108,8 @@ div.sidebar-name {
 }
 
 #widget-list .widget {
-	width: 250px;
-	margin: 0 10px 15px;
+	width: 30%;
+	margin: 0 1.5% 15px;
 	border: 0 none;
 	float: left;
 }
@@ -368,3 +363,52 @@ a.widget-control-edit {
 	cursor: default;
 }
 
+/* PW */
+#pw-button-customize {
+	font-size: 20px;
+	border: 1px solid #21759b;
+	display: block;
+	float: left;
+	background: #0066cc;
+	color: #ffec8b;
+	text-decoration: none;
+
+	padding: 10px 30px 10px 20px;
+	border-radius: 5px 20px 20px 5px;
+	-moz-border-radius: 5px 20px 20px 5px;
+	-webkit-border-radius: 5px 20px 20px 5px;
+}
+
+#pw-button-customize.pw-show {
+	padding: 10px 20px 10px 30px;
+	border-radius: 20px 5px 5px 20px;
+	-moz-border-radius: 20px 5px 5px 20px;
+	-webkit-border-radius: 20px 5px 5px 20px;
+}
+
+#pw-button-reset {
+	font-size: 20px;
+	border: 1px solid #f04040;
+	display: block;
+	float: right;
+	background: #D54E21;
+	color: #ffec8b;
+	text-decoration: none;
+	padding: 10px 20px;
+}
+
+#pw-button-customize:hover {
+	background: #2288ee;
+}
+
+.pw-show .customize {
+	display: none;
+}
+
+.pw-hide .default {
+	display: none;
+}
+
+.pw-hide-panel {
+	display: none;
+}
