@@ -37,6 +37,14 @@ For more information, see the [homepage](http://codeandmore.com/products/wordpre
 
 Every themes support widgets can use it.
 
+= How could I set specific widgets on a page?
+
+In post/page/custom post type edit screen, choose "Customize". And then drag / drop widgets on right side, then configure them.
+
+= How do I disable my changes and use settings from Appearance->Widgets?
+
+In post/page/custom post type edit screen, choose "Default".
+
 == Screenshots ==
 
 [Screenshots](http://codeandmore.com/products/wordpress-plugins/wp-page-widget/)

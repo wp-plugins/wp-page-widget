@@ -281,33 +281,19 @@ wpPWidgets = {
 $(document).ready(function($){
 	wpPWidgets.init();
 
-	$('#pw-button-customize').click(function(e) {
+	$('.pw-toggle-customize').click(function(e) {
+		if ( adminpage == 'post-new-php' ) return true;
+
 		var t = this;
 		var post_id = $('#post_ID').val();
 
-		$.post(ajaxurl, {action: 'pw-toggle-customize', post_id: post_id, status: e.target.className}, function() {
-			$(t).toggleClass('pw-show pw-hide');
-			$('#pw-sidebars-customize').toggleClass('pw-show-panel pw-hide-panel');
+		$.post(ajaxurl, {action: 'pw-toggle-customize', post_id: post_id, 'pw-customize-sidebars': $(t).val()}, function() {
+			
 		});
 
-		return false;
+		return true;
 	});
 
-	$('#pw-button-reset').click(function(e) {
-		var post_id = $("#post_ID").val();
-
-		if ( confirm('You request to reset your changes to default. This action can not be undo. Please confirm that you are sure to do this?') ) {
-			$.post(ajaxurl, {action: 'pw-reset-customize', post_id: post_id}, function(r) {
-				if ( r == '1' ) {
-					if ( confirm('Reset successfully. You need to reload the page to retrieve new data. Do you want to reload now?') ) {
-						window.location.reload(true);
-					}
-				}
-			});
-		}
-
-		return false;
-	});
 });
 
 })(jQuery);

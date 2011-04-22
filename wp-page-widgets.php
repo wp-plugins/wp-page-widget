@@ -16,6 +16,7 @@ add_action('admin_init', 'pw_init');
 add_action('admin_print_scripts', 'pw_print_scripts');
 add_action('admin_print_styles', 'pw_print_styles');
 add_action('admin_menu', 'pw_admin_menu');
+add_action('save_post', 'pw_save_post', 10, 2);
 
 /* AJAX Hooks */
 add_action('wp_ajax_pw-widgets-order', 'pw_ajax_widgets_order');
@@ -192,7 +193,7 @@ function pw_metabox_content($post) {
 
 
 	$customize = get_post_meta($post->ID, '_customize_sidebars', true);
-	$pw_class = $customize == 'yes' ? 'pw-show' : 'pw-hide';
+	if ( !$customize ) $customize = 'no';
 
 	// include widgets function
 	if ( !function_exists('wp_list_widgets') )
@@ -207,12 +208,13 @@ function pw_metabox_content($post) {
 </div>
 
 <div style="padding: 5px;">
-	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>
-	<a id="pw-button-reset" href="#">Reset</a>
+<!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
+	<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
+	&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
 	<br class="clear" />
 </div>
 
-<div id="pw-sidebars-customize" class="<?php echo $pw_class ?>-panel" >
+<div id="pw-sidebars-customize">
 	<input type="hidden" name="pw-sidebar-customize" value="0" />
 
 	<div class="widget-liquid-left">
@@ -281,9 +283,10 @@ function pw_metabox_content($post) {
 }
 
 function pw_ajax_toggle_customize() {
-	$status = stripslashes($_POST['status']);
+	$status = stripslashes($_POST['pw-customize-sidebars']);
 	$post_id = (int) $_POST['post_id'];
-	$status = ($status == 'customize' ? 'yes' : 'no');
+
+	if ( !in_array($status, array('yes', 'no')) ) $status = 'no';
 
 	$post_type = get_post_type($post_id);
 	$post_type_object = get_post_type_object( $post_type );
@@ -296,22 +299,41 @@ function pw_ajax_toggle_customize() {
 	exit(0);
 }
 
-function pw_ajax_reset_customize() {
-	global $wpdb;
+function pw_save_post($post_id, $post) {
+	if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return $post_id;
 
-	$post_id = (int) $_POST['post_id'];
+	if ( isset($_POST['pw-customize-sidebars']) ) {
+		$status = stripslashes($_POST['pw-customize-sidebars']);
 
-	$post_type = get_post_type($post_id);
-	$post_type_object = get_post_type_object( $post_type );
+		if ( !in_array($status, array('yes', 'no')) ) $status = 'no';
 
-	if ( current_user_can($post_type_object->cap->edit_posts) ) {
-		delete_post_meta($post_id, '_sidebars_widgets');
-		$wpdb->query($wpdb->prepare("DELETE FROM $wpdb->options WHERE option_name LIKE 'widget_{$post_id}_%%'"));
-		echo 1;
+		$post_type = get_post_type($post);
+		$post_type_object = get_post_type_object( $post_type );
+
+		if ( current_user_can($post_type_object->cap->edit_posts) ) {
+			update_post_meta($post_id, '_customize_sidebars', $status);
+		}
 	}
 
-	exit(0);
+	return $post_id;
 }
+
+//function pw_ajax_reset_customize() {
+//	global $wpdb;
+//
+//	$post_id = (int) $_POST['post_id'];
+//
+//	$post_type = get_post_type($post_id);
+//	$post_type_object = get_post_type_object( $post_type );
+//
+//	if ( current_user_can($post_type_object->cap->edit_posts) ) {
+//		delete_post_meta($post_id, '_sidebars_widgets');
+//		$wpdb->query($wpdb->prepare("DELETE FROM $wpdb->options WHERE option_name LIKE 'widget_{$post_id}_%%'"));
+//		echo 1;
+//	}
+//
+//	exit(0);
+//}
 
 function pw_ajax_widgets_order() {
 	check_ajax_referer( 'save-sidebar-widgets', 'savewidgets' );
@@ -488,9 +510,9 @@ function pw_filter_widget_display_instance($instance, $widget, $args) {
 function pw_filter_widget_form_instance($instance, $widget) {
 	global $post, $pagenow;
 
-	$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
+	//$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
 
-	if ( $enable_customize == 'yes' && (is_admin() && in_array($pagenow, array('post-new.php', 'post.php'))) ) {
+	if ( (is_admin() && in_array($pagenow, array('post-new.php', 'post.php'))) ) {
 		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
 
 		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
