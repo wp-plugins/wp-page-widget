@@ -301,7 +301,7 @@ function pw_ajax_toggle_customize() {
 
 function pw_save_post($post_id, $post) {
 	if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return $post_id;
-
+//print_r($_POST);
 	if ( isset($_POST['pw-customize-sidebars']) ) {
 		$status = stripslashes($_POST['pw-customize-sidebars']);
 
@@ -385,7 +385,7 @@ function pw_ajax_save_widget() {
 	$post_id = stripslashes($_POST['post_id']);
 
 	unset( $_POST['savewidgets'], $_POST['action'] );
-
+	
 	do_action('load-widgets.php');
 	do_action('widgets.php');
 	do_action('sidebar_admin_setup');
@@ -396,10 +396,10 @@ function pw_ajax_save_widget() {
 	$multi_number = !empty($_POST['multi_number']) ? (int) $_POST['multi_number'] : 0;
 	$settings = isset($_POST['widget-' . $id_base]) && is_array($_POST['widget-' . $id_base]) ? $_POST['widget-' . $id_base] : false;
 	$error = '<p>' . __('An error has occured. Please reload the page and try again.') . '</p>';
-
+	
 	$sidebars = wp_get_sidebars_widgets();
 	$sidebar = isset($sidebars[$sidebar_id]) ? $sidebars[$sidebar_id] : array();
-
+	
 	// delete
 	if ( isset($_POST['delete_widget']) && $_POST['delete_widget'] ) {
 
@@ -473,7 +473,7 @@ function pw_filter_widgets($sidebars_widgets) {
 	global $post, $pagenow;
 
 	if ( (is_admin() && !in_array($pagenow, array('post-new.php', 'post.php')))
-		|| (!is_admin() && !is_single())
+		|| (!is_admin() && !is_singular())
 		)
 		return $sidebars_widgets;
 
@@ -494,13 +494,14 @@ function pw_filter_widget_display_instance($instance, $widget, $args) {
 	global $post;
 
 	$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
-
-	if ( $enable_customize == 'yes' &&  is_single() ) {
+	//var_dump($enable_customize);
+	if ( $enable_customize == 'yes' &&  is_singular() ) {
 		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
-
+		
 		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
-
+			
 			$instance = $widget_instance[$widget->number];
+			//var_dump($instance);
 		}
 	}
 
