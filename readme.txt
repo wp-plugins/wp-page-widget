@@ -3,12 +3,12 @@ Contributors: CodeAndMore
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6
 Tags: widget, page, post, single, wordpress, custom post type
 Requires at least: 2.5
-Tested up to: 3.1.1
+Tested up to: 3.2.1
 Stable tag: trunk
 
-Select widgets for each page / post / custom post type. For every single page / post / custom post type 
+Select widgets for each page / post / custom post type. For every single page / post / custom post type
 
-we can select which widgets to show. 
+we can select which widgets to show.
 
 
 == Description ==
@@ -51,6 +51,8 @@ In post/page/custom post type edit screen, choose "Default".
 
 
 == Changelog ==
+= 1.2 (2011-08-24) =
+* Compatibility with custom post type
 = 1.1 (2011-04-19) =
 * Fix widget saving bug
 = 1.0 (2011-01-27) =

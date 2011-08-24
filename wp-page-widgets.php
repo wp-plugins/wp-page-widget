@@ -5,11 +5,11 @@
   Plugin URI: http://codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 1.1
+  Version: 1.2
   Author URI: http://codeandmore.com/
  */
 
-define('PAGE_WIDGET_VERSION', '1.1');
+define('PAGE_WIDGET_VERSION', '1.2');
 
 /* Hooks */
 add_action('admin_init', 'pw_init');
@@ -45,6 +45,11 @@ function pw_init() {
 			}
 		}
 
+		$upgraded = true;
+	}
+
+	if ( version_compare($current_version, '1.2', '<') ) {
+		// do nothing
 		$upgraded = true;
 	}
 
@@ -143,14 +148,14 @@ function pw_settings_page() {
 				</form>
 			</div>
 		</div>
-		
+
 		<div class="liquid-right">
 			<div class="panel-right">
 <!--				<div class="panel-box">
 					<div class="handlediv"><br /></div>
 					<h3 class="hndle">Test</h3>
 					<div class="inside">
-						
+
 					</div>
 				</div>-->
 			</div>
@@ -199,7 +204,6 @@ function pw_metabox_content($post) {
 	if ( !function_exists('wp_list_widgets') )
 		require_once(ABSPATH . '/wp-admin/includes/widgets.php');
 	?>
-<form style="display: none;" action="" method="post"></form>
 
 <div style="padding: 5px;">
 	<?php if ( $settings['donation'] != 'yes' ) {
@@ -213,6 +217,8 @@ function pw_metabox_content($post) {
 	&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
 	<br class="clear" />
 </div>
+
+<form style="display: none;" action="" method="post"></form>
 
 <div id="pw-sidebars-customize">
 	<input type="hidden" name="pw-sidebar-customize" value="0" />
@@ -385,7 +391,7 @@ function pw_ajax_save_widget() {
 	$post_id = stripslashes($_POST['post_id']);
 
 	unset( $_POST['savewidgets'], $_POST['action'] );
-	
+
 	do_action('load-widgets.php');
 	do_action('widgets.php');
 	do_action('sidebar_admin_setup');
@@ -396,10 +402,10 @@ function pw_ajax_save_widget() {
 	$multi_number = !empty($_POST['multi_number']) ? (int) $_POST['multi_number'] : 0;
 	$settings = isset($_POST['widget-' . $id_base]) && is_array($_POST['widget-' . $id_base]) ? $_POST['widget-' . $id_base] : false;
 	$error = '<p>' . __('An error has occured. Please reload the page and try again.') . '</p>';
-	
+
 	$sidebars = wp_get_sidebars_widgets();
 	$sidebar = isset($sidebars[$sidebar_id]) ? $sidebars[$sidebar_id] : array();
-	
+
 	// delete
 	if ( isset($_POST['delete_widget']) && $_POST['delete_widget'] ) {
 
@@ -494,14 +500,13 @@ function pw_filter_widget_display_instance($instance, $widget, $args) {
 	global $post;
 
 	$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
-	//var_dump($enable_customize);
+
 	if ( $enable_customize == 'yes' &&  is_singular() ) {
 		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
-		
+
 		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
-			
+
 			$instance = $widget_instance[$widget->number];
-			//var_dump($instance);
 		}
 	}
 
