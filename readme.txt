@@ -51,6 +51,8 @@ In post/page/custom post type edit screen, choose "Default".
 
 
 == Changelog ==
+= 1.3 (2011-09-20) =
+* Compatibility with image dialog plugin
 = 1.2 (2011-08-24) =
 * Compatibility with custom post type
 = 1.1 (2011-04-19) =

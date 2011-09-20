@@ -1,15 +1,14 @@
 <?php
-
 /*
   Plugin Name: Wordpress Page Widgets
   Plugin URI: http://codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 1.2
+  Version: 1.3
   Author URI: http://codeandmore.com/
  */
 
-define('PAGE_WIDGET_VERSION', '1.2');
+define('PAGE_WIDGET_VERSION', '1.3');
 
 /* Hooks */
 add_action('admin_init', 'pw_init');
@@ -31,7 +30,7 @@ add_filter('widget_form_callback', 'pw_filter_widget_form_instance', 10, 2);
 
 function pw_init() {
 	global $wpdb;
-
+	
 	$current_version = get_option('page_widget_version', '1.0');
 	$upgraded = false;
 
@@ -44,11 +43,15 @@ function pw_init() {
 				update_post_meta($post_id, '_customize_sidebars', 'yes');
 			}
 		}
-
 		$upgraded = true;
 	}
 
 	if ( version_compare($current_version, '1.2', '<') ) {
+		// do nothing
+		$upgraded = true;
+	}
+	
+	if ( version_compare($current_version, '1.3', '<') ) {
 		// do nothing
 		$upgraded = true;
 	}
@@ -60,11 +63,15 @@ function pw_init() {
 
 function pw_print_scripts() {
 	global $pagenow, $typenow;
-
+	
 	// currently this plugin just work on edit page screen.
 	if ( in_array($pagenow, array('post-new.php', 'post.php')) ) {
+		if (is_plugin_active('image-widget/image-widget.php')) {
+			wp_enqueue_script('pw-widgets2', WP_PLUGIN_URL.'/image-widget/image-widget.js',array('thickbox'), false, true );
+		}
 		wp_enqueue_script('pw-widgets', plugin_dir_url(__FILE__) . 'assets/js/page-widgets.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), '1.0', true);
 	}
+	
 }
 
 function pw_print_styles() {
