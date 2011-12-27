@@ -13,6 +13,8 @@ we can select which widgets to show.
 
 == Description ==
 
+WP3.3 users: Please don't use it for now. There is a known issue that it does not work with 3.3.
+
 This made the widget selection much easier. With this plugin activated we can select widgets to show specifically for  one page / post / or custom post type.
 
 == Installation ==
