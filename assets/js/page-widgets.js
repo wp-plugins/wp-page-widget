@@ -4,7 +4,7 @@ var wpPWidgets;
 wpPWidgets = {
 
 	init : function() {
-		var rem, sidebars = $('div.widgets-sortables');
+		var rem, sidebars = $('div.widgets-sortables'), the_id;
 
 		$('#widgets-right').children('.widgets-holder-wrap').children('.sidebar-name').click(function(){
 			var c = $(this).siblings('.widgets-sortables'), p = $(this).parent();
@@ -78,6 +78,7 @@ wpPWidgets = {
 			start: function(e,ui) {
 				wpPWidgets.fixWebkit(1);
 				ui.helper.find('div.widget-description').hide();
+				the_id = this.id;
 			},
 			stop: function(e,ui) {
 				if ( rem )
@@ -111,9 +112,10 @@ wpPWidgets = {
 
 				var add = ui.item.find('input.add_new').val(),
 					n = ui.item.find('input.multi_number').val(),
-					id = ui.item.attr('id'),
+					//id = ui.item.attr('id'),
+					id = the_id,
 					sb = $(this).attr('id');
-
+					console.log(ui.item);
 				ui.item.css({'marginLeft':'','width':''});
 				wpPWidgets.fixWebkit();
 				if ( add ) {

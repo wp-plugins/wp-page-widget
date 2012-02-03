@@ -4,11 +4,11 @@
   Plugin URI: http://codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 1.3
+  Version: 1.4
   Author URI: http://codeandmore.com/
  */
 
-define('PAGE_WIDGET_VERSION', '1.3');
+define('PAGE_WIDGET_VERSION', '1.4');
 
 /* Hooks */
 add_action('admin_init', 'pw_init');
@@ -55,6 +55,11 @@ function pw_init() {
 		// do nothing
 		$upgraded = true;
 	}
+	
+	if ( version_compare($current_version, '1.4', '<') ) {
+		// do nothing
+		$upgraded = true;
+	}
 
 	if ( $upgraded ) {
 		update_option('page_widget_version', PAGE_WIDGET_VERSION);
@@ -69,7 +74,7 @@ function pw_print_scripts() {
 		if (is_plugin_active('image-widget/image-widget.php')) {
 			wp_enqueue_script('pw-widgets2', WP_PLUGIN_URL.'/image-widget/image-widget.js',array('thickbox'), false, true );
 		}
-		wp_enqueue_script('pw-widgets', plugin_dir_url(__FILE__) . 'assets/js/page-widgets.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), '1.0', true);
+		wp_enqueue_script('pw-widgets', plugin_dir_url(__FILE__) . 'assets/js/page-widgets.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), '1.1', true);
 	}
 	
 }
@@ -114,6 +119,7 @@ function pw_settings_page() {
 	$opts = pw_get_settings();
 	$post_types = get_post_types('', false);
 	?>
+	
 <div class="wrap">
 	<h2>Settings - Page Widgets</h2>
 

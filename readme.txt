@@ -3,7 +3,7 @@ Contributors: CodeAndMore
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6
 Tags: widget, page, post, single, wordpress, custom post type
 Requires at least: 2.5
-Tested up to: 3.2.1
+Tested up to: 3.3.1
 Stable tag: trunk
 
 Select widgets for each page / post / custom post type. For every single page / post / custom post type
@@ -13,9 +13,8 @@ we can select which widgets to show.
 
 == Description ==
 
-WP3.3 users: Please don't use it for now. There is a known issue that it does not work with 3.3.
-
 This made the widget selection much easier. With this plugin activated we can select widgets to show specifically for  one page / post / or custom post type.
+Always note to use it with a sidebar enabled theme, if that is twenty-eleven default theme then you will need Sidebar Template.
 
 == Installation ==
 
@@ -37,7 +36,7 @@ For more information, see the [homepage](http://codeandmore.com/products/wordpre
 
 = Do I need a specific theme to use this plugin? =
 
-Every themes support widgets can use it.
+Every widgets enabled themes can use it.
 
 = How could I set specific widgets on a page?
 
@@ -53,6 +52,8 @@ In post/page/custom post type edit screen, choose "Default".
 
 
 == Changelog ==
+= 1.4 (2012-02-03) =
+* Compatibility with WP 3.3.1
 = 1.3 (2011-09-20) =
 * Compatibility with image dialog plugin
 = 1.2 (2011-08-24) =
