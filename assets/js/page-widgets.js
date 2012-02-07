@@ -190,6 +190,14 @@ wpPWidgets = {
 
 	save : function(widget, del, animate, order) {
 		var sb = widget.closest('div.widgets-sortables').attr('id'), data = widget.find('form').serialize(), a;
+		if(data == "")
+		{
+			wgIn = widget.find('.widget-inside');
+			htmlInwpIn = wgIn.html();
+			wgIn.html('');
+			wgIn.append('<form method="post" action="">'+htmlInwpIn+'</form>');
+			data = widget.find('form').serialize();
+		}
 		widget = $(widget);
 		$('.ajax-feedback', widget).css('visibility', 'visible');
 
