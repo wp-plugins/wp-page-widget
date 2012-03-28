@@ -4,7 +4,7 @@
   Plugin URI: http://codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 1.4
+  Version: 1.5
   Author URI: http://codeandmore.com/
  */
 
@@ -60,6 +60,10 @@ function pw_init() {
 		// do nothing
 		$upgraded = true;
 	}
+	if ( version_compare($current_version, '1.5', '<') ) {
+		// do nothing
+		$upgraded = true;
+	}
 
 	if ( $upgraded ) {
 		update_option('page_widget_version', PAGE_WIDGET_VERSION);
@@ -84,6 +88,9 @@ function pw_print_styles() {
 
 	// currently this plugin just work on edit page screen.
 	if ( in_array($pagenow, array('post-new.php', 'post.php')) ) {
+		if (is_plugin_active('custom-field-list-widget/widget_custom_field_list.php')) {
+			wp_enqueue_style('pw-widgets3', WP_PLUGIN_URL.'/custom-field-list-widget/widget_custom_field_list_widgetsettings.css',array() );
+		}
 		wp_enqueue_style('pw-widgets', plugin_dir_url(__FILE__) . 'assets/css/page-widgets.css', array(), '1.0');
 	}
 
@@ -446,7 +453,7 @@ function pw_ajax_save_widget() {
 
 				// do some hack
 				$number = $multi_number > 0 ? $multi_number : (int)$_POST['widget_number'];
-				$all_instance = $control['callback'][0]->get_settings();
+				#$all_instance = $control['callback'][0]->get_settings();
 
 				if ( !isset($all_instance[$number]) ) { // that's mean new widget was added. => call update function to add widget (globally).
 					ob_start();

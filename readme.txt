@@ -52,6 +52,8 @@ In post/page/custom post type edit screen, choose "Default".
 
 
 == Changelog ==
+= 1.5 (2012-02-03) =
+* Compatibility with WP custom field list widget plugin
 = 1.4 (2012-02-03) =
 * Compatibility with WP 3.3.1
 = 1.3 (2011-09-20) =
