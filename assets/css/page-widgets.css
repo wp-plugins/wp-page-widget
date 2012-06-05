@@ -40,6 +40,8 @@ div.widget-liquid-right {
 }
 
 div.sidebar-name h3 {
+	color: #464646;
+	font-weight: bold;
 	margin: 0;
 	padding: 5px 12px;
 	font-size: 13px;

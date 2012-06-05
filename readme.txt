@@ -3,7 +3,7 @@ Contributors: CodeAndMore
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6
 Tags: widget, page, post, single, wordpress, custom post type
 Requires at least: 2.5
-Tested up to: 3.3.1
+Tested up to: 3.3.2
 Stable tag: trunk
 
 Select widgets for each page / post / custom post type. For every single page / post / custom post type
@@ -14,7 +14,7 @@ we can select which widgets to show.
 == Description ==
 
 This made the widget selection much easier. With this plugin activated we can select widgets to show specifically for  one page / post / or custom post type.
-Always note to use it with a sidebar enabled theme, if that is twenty-eleven default theme then you will need Sidebar Template.
+Always note to use it with a sidebar enabled theme.
 
 == Installation ==
 
@@ -46,12 +46,18 @@ In post/page/custom post type edit screen, choose "Customize". And then drag / d
 
 In post/page/custom post type edit screen, choose "Default".
 
+= How do I change settings for each category or taxonomy
+
+The interface is integrated to category/taxonomy editing screen just like you edit post page.
+
 == Screenshots ==
 
 [Screenshots](http://codeandmore.com/products/wordpress-plugins/wp-page-widget/)
 
 
 == Changelog ==
+= 1.6 (2012-02-03) =
+* Add several more features: search, blog, category, taxonomy configurable pages.
 = 1.5 (2012-02-03) =
 * Compatibility with WP custom field list widget plugin
 = 1.4 (2012-02-03) =

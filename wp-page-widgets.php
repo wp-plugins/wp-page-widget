@@ -16,12 +16,13 @@ add_action('admin_print_scripts', 'pw_print_scripts');
 add_action('admin_print_styles', 'pw_print_styles');
 add_action('admin_menu', 'pw_admin_menu');
 add_action('save_post', 'pw_save_post', 10, 2);
+add_action('edit_term', "pw_save_term", 10, 2);
 
 /* AJAX Hooks */
 add_action('wp_ajax_pw-widgets-order', 'pw_ajax_widgets_order');
 add_action('wp_ajax_pw-save-widget', 'pw_ajax_save_widget');
 add_action('wp_ajax_pw-toggle-customize', 'pw_ajax_toggle_customize');
-add_action('wp_ajax_pw-reset-customize', 'pw_ajax_reset_customize');
+add_action('wp_ajax_pw-get-taxonomy-widget', 'pw_returnTaxonomyWidget');
 
 /* Filters */
 add_filter('sidebars_widgets', 'pw_filter_widgets');
@@ -74,7 +75,13 @@ function pw_print_scripts() {
 	global $pagenow, $typenow;
 	
 	// currently this plugin just work on edit page screen.
-	if ( in_array($pagenow, array('post-new.php', 'post.php')) ) {
+	if ( 
+				in_array($pagenow, array('post-new.php', 'post.php', 'edit-tags.php')) 
+				|| 				
+				// Page widget config for front page, search page
+				( in_array($pagenow, array('admin.php')) && (($_GET['page'] == 'pw-front-page') || ($_GET['page'] == 'pw-search-page')) ) 
+		) {
+		
 		if (is_plugin_active('image-widget/image-widget.php')) {
 			wp_enqueue_script('pw-widgets2', WP_PLUGIN_URL.'/image-widget/image-widget.js',array('thickbox'), false, true );
 		}
@@ -86,15 +93,21 @@ function pw_print_scripts() {
 function pw_print_styles() {
 	global $pagenow, $typenow;
 
-	// currently this plugin just work on edit page screen.
-	if ( in_array($pagenow, array('post-new.php', 'post.php')) ) {
+	// currently this plugin just work on edit page, edit tags screen.
+	if ( 
+			in_array($pagenow, array('post-new.php', 'post.php', 'edit-tags.php')) 
+			||			
+			// Page widget config for front page, search page
+			( in_array($pagenow, array('admin.php')) && (($_GET['page'] == 'pw-front-page') || ($_GET['page'] == 'pw-search-page')) ) 
+		
+		) {
 		if (is_plugin_active('custom-field-list-widget/widget_custom_field_list.php')) {
 			wp_enqueue_style('pw-widgets3', WP_PLUGIN_URL.'/custom-field-list-widget/widget_custom_field_list_widgetsettings.css',array() );
 		}
-		wp_enqueue_style('pw-widgets', plugin_dir_url(__FILE__) . 'assets/css/page-widgets.css', array(), '1.0');
+		wp_enqueue_style('pw-widgets', plugin_dir_url(__FILE__) . 'assets/css/page-widgets.css', array(), '1.0');		
 	}
 
-	wp_enqueue_style('pw-style', plugin_dir_url(__FILE__) . 'assets/css/style.css', array(), '1.0');
+	wp_enqueue_style('pw-style', plugin_dir_url(__FILE__) . 'assets/css/style.css', array(), '1.5');
 }
 
 function pw_admin_menu() {
@@ -107,10 +120,24 @@ function pw_admin_menu() {
 		foreach ($settings['post_types'] as $post_type) {
 			add_meta_box('pw-widgets', 'Page Widgets', 'pw_metabox_content', $post_type, 'advanced', 'high');
 		}
+
+		//add Taxonomy Widgets metabox
+		foreach ($settings['taxonomies'] as $taxonomy) {
+			add_action($taxonomy . '_edit_form', 'pw_showTaxonomyWidget', 10, 2);
+		}
 	}
 
 	// options page
-	add_options_page('Page Widgets', 'Page Widgets', 'manage_options', 'pw-settings', 'pw_settings_page');
+	// add_options_page('Page Widgets', 'Page Widgets', 'manage_options', 'pw-settings', 'pw_settings_page');
+	
+	// Menu page
+	add_menu_page('Page Widgets', 'Page Widgets', 'manage_options', 'pw-settings', 'pw_settings_page');	
+	
+	// Add a submenu to the custom top-level menu: front page
+	//add_submenu_page('pw-settings', 'Front page', 'Front page', 'manage_options', 'pw-front-page', 'pw_front_page');
+	
+	// Add a submenu to the custom top-level menu: search page
+	add_submenu_page('pw-settings', 'Search page', 'Search page', 'manage_options', 'pw-search-page', 'pw_search_page');
 }
 
 function pw_settings_page() {
@@ -185,14 +212,169 @@ function pw_settings_page() {
 	<?php
 }
 
+
+// pw_search_page() displays the search page setting on pw widget
+function pw_search_page() {
+	global $wp_registered_sidebars, $sidebars_widgets, $wp_registered_widgets;
+
+	$settings = pw_get_settings();
+
+	// register the inactive_widgets area as sidebar
+	register_sidebar(array(
+		'name' => __('Inactive Widgets'),
+		'id' => 'wp_inactive_widgets',
+		'description' => '',
+		'before_widget' => '',
+		'after_widget' => '',
+		'before_title' => '',
+		'after_title' => '',
+	));
+
+	$sidebars_widgets = wp_get_sidebars_widgets();
+	if ( empty( $sidebars_widgets ) )
+		$sidebars_widgets = wp_get_widget_defaults();
+
+
+	$customize = get_option('_pw_search_page', 'no') ? get_option('_pw_search_page', 'no') : 'no';
+
+	// include widgets function
+	if ( !function_exists('wp_list_widgets') )
+		require_once(ABSPATH . '/wp-admin/includes/widgets.php');
+	?>
+  <div class="wrap">
+    <h2>Page widgets for Search page</h2>
+    <div class="postbox " id="pw-widgets">
+      <div title="Click to toggle" class="handlediv"><br></div>
+      <h3 class="hndle"><span>Widgets area</span></h3>
+      <div class="inside">
+        <div style="padding: 5px;">
+          <?php if ( $settings['donation'] != 'yes' ) {
+            echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="'.admin_url('options-general.php?page=pw-settings').'"><small>Hide this donation message</small></a>.</p></div>';
+          }?>
+        </div>
+        
+        <div style="padding: 5px;">
+        <!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
+          <input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
+          &nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
+          <br class="clear" />
+        </div>
+        
+        <form style="display: none;" action="" method="post"></form>
+        
+        <div id="pw-sidebars-customize">
+          <input type="hidden" name="pw-sidebar-customize" value="0" />
+        
+          <div class="widget-liquid-left">
+          <div id="widgets-left">
+            <div id="available-widgets" class="widgets-holder-wrap">
+              <div class="sidebar-name">
+                <div class="sidebar-name-arrow"><br /></div>
+                <h3><?php _e('Available Widgets'); ?> <span id="removing-widget"><?php _e('Deactivate'); ?> <span></span></span></h3>
+              </div>
+              <div class="widget-holder">
+                <p class="description"><?php _e('Drag widgets from here to a sidebar on the right to activate them. Drag widgets back here to deactivate them and delete their settings.'); ?></p>
+                <div id="widget-list">
+                <?php wp_list_widgets(); ?>
+                </div>
+                <br class='clear' />
+              </div>
+              <br class="clear" />
+            </div>
+        
+            <div class="widgets-holder-wrap">
+              <div class="sidebar-name">
+                <div class="sidebar-name-arrow"><br /></div>
+                <h3><?php _e('Inactive Widgets'); ?>
+                <span><img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3>
+              </div>
+              <div class="widget-holder inactive">
+                <p class="description"><?php _e('Drag widgets here to remove them from the sidebar but keep their settings.'); ?></p>
+                <?php wp_list_widget_controls('wp_inactive_widgets'); ?>
+                <br class="clear" />
+              </div>
+            </div>
+          </div>
+          </div>
+        
+          <div class="widget-liquid-right">
+          <div id="widgets-right">
+          <?php
+          $i = 0;
+          foreach ( $wp_registered_sidebars as $sidebar => $registered_sidebar ) {
+            if ( 'wp_inactive_widgets' == $sidebar )
+              continue;
+            if (  !in_array($sidebar, $settings['sidebars']) )
+              continue;
+            $closed = $i ? ' closed' : ''; ?>
+            <div class="widgets-holder-wrap<?php echo $closed; ?>">
+              <div class="sidebar-name">
+                <div class="sidebar-name-arrow"><br /></div>
+                <h3><?php echo esc_html( $registered_sidebar['name'] ); ?>
+                <span><img src="<?php echo esc_url( admin_url( 'images/wpspin_dark.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3>
+              </div>
+              <?php 
+							wp_list_widget_controls( $sidebar ); // Show the control forms for each of the widgets in this sidebar ?>
+            </div>
+          <?php
+            $i++;
+          } ?>
+          </div>
+          </div>
+        
+          <form action="" method="post">
+          <?php wp_nonce_field( 'save-sidebar-widgets', '_wpnonce_widgets', false ); ?>
+          </form>
+          <br class="clear" />
+        <input type="hidden" id="pw_search_page" value="yes" />
+        </div><!-- End #pw-sidebars-customize -->
+      </div>
+    </div>
+  </div>
+	<?php
+}
+
+// pw_category_page() displays the category page setting on pw widget
+function pw_front_page() {
+	?>
+  <div class="wrap">
+    <h2>Page widgets for Front page - only latest posts option</h2>
+    <div class="liquid-left">
+        <div class="panel-left">
+            <form action="" method="post">
+                <table class="form-table">
+                    <tr>
+                        <th>Enable for drag edit Category</th>
+                        <td>
+                            <input type="checkbox" class="tag-checked" />
+                        </td>
+                    </tr>
+                </table>
+                <p class="submit">
+                    <input type="submit" class="button-primary" name="save-changes" value="Save Changes" />
+                </p>
+            </form>
+        </div>
+    </div>
+  </div>
+	<?php
+}
+
+// Page widgets get settings
 function pw_get_settings() {
 	$defaults = array(
 	    'donation' => 'no',
 	    'post_types' => array('post', 'page'),
 	    'sidebars' => array(),
 	);
+	//get list taxonomies registered in system
+	$defaults['taxonomies'] = array();
+	$taxonomies = get_taxonomies(array('show_ui' => true));
+	foreach($taxonomies as $taxonomy){
+		$defaults['taxonomies'][] = $taxonomy;
+	}
 
-	$settings = get_option('pw_options', array());
+	$settings = get_option('pw_options', array());	
 	return wp_parse_args($settings, $defaults);
 }
 
@@ -308,18 +490,285 @@ function pw_metabox_content($post) {
 	<?php
 }
 
+function pw_showTaxonomyWidget($tag, $taxonomy){
+	$taxonomyId = $tag->term_id;
+	$taxonomyMetaData = getTaxonomyMetaData($taxonomy, $taxonomyId);
+
+	global $wp_registered_sidebars, $sidebars_widgets, $wp_registered_widgets;
+
+	$settings = pw_get_settings();
+
+	// register the inactive_widgets area as sidebar
+	register_sidebar(array(
+		'name' => __('Inactive Widgets'),
+		'id' => 'wp_inactive_widgets',
+		'description' => '',
+		'before_widget' => '',
+		'after_widget' => '',
+		'before_title' => '',
+		'after_title' => '',
+	));
+
+	$sidebars_widgets = wp_get_sidebars_widgets();
+	if ( empty( $sidebars_widgets ) )
+		$sidebars_widgets = wp_get_widget_defaults();
+
+
+	$customize = isset($taxonomyMetaData['_customize_sidebars'])?$taxonomyMetaData['_customize_sidebars']:"no";
+
+	// include widgets function
+	if ( !function_exists('wp_list_widgets') )
+		require_once(ABSPATH . '/wp-admin/includes/widgets.php');
+	?>
+<div class="postbox " id="pw-widgets">
+	<div title="Click to toggle" class="handlediv"><br></div>
+	<h3 class="hndle"><span><?php echo ucwords(str_replace("_"," ",$taxonomy))?> Widgets</span></h3>
+	<div class="inside">
+		<div style="padding: 5px;">
+			<?php if ( $settings['donation'] != 'yes' ) {
+				echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="'.admin_url('options-general.php?page=pw-settings').'"><small>Hide this donation message</small></a>.</p></div>';
+			}?>
+		</div>
+		
+		<div style="padding: 5px;">
+		<!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
+			<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
+			&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
+			<br class="clear" />
+		</div>
+		
+		<form style="display: none;" action="" method="post"></form>
+		
+		<div id="pw-sidebars-customize">
+			<input type="hidden" name="pw-sidebar-customize" value="0" />
+		
+			<div class="widget-liquid-left">
+			<div id="widgets-left">
+				<div id="available-widgets" class="widgets-holder-wrap">
+					<div class="sidebar-name">
+						<div class="sidebar-name-arrow"><br /></div>
+						<h3><?php _e('Available Widgets'); ?> <span id="removing-widget"><?php _e('Deactivate'); ?> <span></span></span></h3>
+					</div>
+					<div class="widget-holder">
+						<p class="description"><?php _e('Drag widgets from here to a sidebar on the right to activate them. Drag widgets back here to deactivate them and delete their settings.'); ?></p>
+						<div id="widget-list">
+						<?php wp_list_widgets(); ?>
+						</div>
+						<br class='clear' />
+					</div>
+					<br class="clear" />
+				</div>
+		
+				<div class="widgets-holder-wrap">
+					<div class="sidebar-name">
+						<div class="sidebar-name-arrow"><br /></div>
+						<h3><?php _e('Inactive Widgets'); ?>
+						<span><img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3>
+					</div>
+					<div class="widget-holder inactive">
+						<p class="description"><?php _e('Drag widgets here to remove them from the sidebar but keep their settings.'); ?></p>
+						<?php wp_list_widget_controls('wp_inactive_widgets'); ?>
+						<br class="clear" />
+					</div>
+				</div>
+			</div>
+			</div>
+		
+			<div class="widget-liquid-right">
+			<div id="widgets-right">
+			<?php
+			$i = 0;
+			foreach ( $wp_registered_sidebars as $sidebar => $registered_sidebar ) {
+				if ( 'wp_inactive_widgets' == $sidebar )
+					continue;
+				if (  !in_array($sidebar, $settings['sidebars']) )
+					continue;
+				$closed = $i ? ' closed' : ''; ?>
+				<div class="widgets-holder-wrap<?php echo $closed; ?>">
+					<div class="sidebar-name">
+						<div class="sidebar-name-arrow"><br /></div>
+						<h3><?php echo esc_html( $registered_sidebar['name'] ); ?>
+						<span><img src="<?php echo esc_url( admin_url( 'images/wpspin_dark.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3>
+					</div>
+					<?php wp_list_widget_controls( $sidebar ); // Show the control forms for each of the widgets in this sidebar ?>
+				</div>
+			<?php
+				$i++;
+			} ?>
+			</div>
+			</div>
+		
+			<form action="" method="post">
+			<?php wp_nonce_field( 'save-sidebar-widgets', '_wpnonce_widgets', false ); ?>
+			</form>
+			<br class="clear" />
+		<input type="hidden" id="tag_ID" value="<?php echo $tag->term_id?>" />
+		<input type="hidden" id="taxonomy" name="taxonomyEdited" value="<?php echo $taxonomy?>" />
+		</div><!-- End #pw-sidebars-customize -->
+	</div>
+</div>
+	<?php
+}
+
+function pw_returnTaxonomyWidget(){
+	$taxonomy = $_POST['taxonomy'];
+
+	global $wp_registered_sidebars, $sidebars_widgets, $wp_registered_widgets;
+
+	$settings = pw_get_settings();
+
+	// register the inactive_widgets area as sidebar
+	register_sidebar(array(
+		'name' => __('Inactive Widgets'),
+		'id' => 'wp_inactive_widgets',
+		'description' => '',
+		'before_widget' => '',
+		'after_widget' => '',
+		'before_title' => '',
+		'after_title' => '',
+	));
+
+	$sidebars_widgets = wp_get_sidebars_widgets();
+	if ( empty( $sidebars_widgets ) )
+		$sidebars_widgets = wp_get_widget_defaults();
+
+
+	$customize = "no";
+
+	// include widgets function
+	if ( !function_exists('wp_list_widgets') )
+		require_once(ABSPATH . '/wp-admin/includes/widgets.php');
+	ob_start();
+	?>
+<div class="postbox " id="pw-widgets">
+	<div title="Click to toggle" class="handlediv"><br></div>
+	<h3 class="hndle"><span><?php echo ucwords(str_replace("_"," ",$taxonomy))?> Widgets</span></h3>
+	<div class="inside">
+		<div style="padding: 5px;">
+			<?php if ( $settings['donation'] != 'yes' ) {
+				echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="'.admin_url('options-general.php?page=pw-settings').'"><small>Hide this donation message</small></a>.</p></div>';
+			}?>
+		</div>
+		
+		<div style="padding: 5px;">
+		<!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
+			<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
+			&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
+			<br class="clear" />
+		</div>
+		
+		<form style="display: none;" action="" method="post"></form>
+		
+		<div id="pw-sidebars-customize">
+			<input type="hidden" name="pw-sidebar-customize" value="0" />
+		
+			<div class="widget-liquid-left">
+			<div id="widgets-left">
+				<div id="available-widgets" class="widgets-holder-wrap">
+					<div class="sidebar-name">
+						<div class="sidebar-name-arrow"><br /></div>
+						<h3><?php _e('Available Widgets'); ?> <span id="removing-widget"><?php _e('Deactivate'); ?> <span></span></span></h3>
+					</div>
+					<div class="widget-holder">
+						<p class="description"><?php _e('Drag widgets from here to a sidebar on the right to activate them. Drag widgets back here to deactivate them and delete their settings.'); ?></p>
+						<div id="widget-list">
+						<?php wp_list_widgets(); ?>
+						</div>
+						<br class='clear' />
+					</div>
+					<br class="clear" />
+				</div>
+		
+				<div class="widgets-holder-wrap">
+					<div class="sidebar-name">
+						<div class="sidebar-name-arrow"><br /></div>
+						<h3><?php _e('Inactive Widgets'); ?>
+						<span><img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3>
+					</div>
+					<div class="widget-holder inactive">
+						<p class="description"><?php _e('Drag widgets here to remove them from the sidebar but keep their settings.'); ?></p>
+						<?php wp_list_widget_controls('wp_inactive_widgets'); ?>
+						<br class="clear" />
+					</div>
+				</div>
+			</div>
+			</div>
+		
+			<div class="widget-liquid-right">
+			<div id="widgets-right">
+			<?php
+			$i = 0;
+			foreach ( $wp_registered_sidebars as $sidebar => $registered_sidebar ) {
+				if ( 'wp_inactive_widgets' == $sidebar )
+					continue;
+				if (  !in_array($sidebar, $settings['sidebars']) )
+					continue;
+				$closed = $i ? ' closed' : ''; ?>
+				<div class="widgets-holder-wrap<?php echo $closed; ?>">
+					<div class="sidebar-name">
+						<div class="sidebar-name-arrow"><br /></div>
+						<h3><?php echo esc_html( $registered_sidebar['name'] ); ?>
+						<span><img src="<?php echo esc_url( admin_url( 'images/wpspin_dark.gif' ) ); ?>" class="ajax-feedback" title="" alt="" /></span></h3>
+					</div>
+					<?php wp_list_widget_controls( $sidebar ); // Show the control forms for each of the widgets in this sidebar ?>
+				</div>
+			<?php
+				$i++;
+			} ?>
+			</div>
+			</div>
+		
+			<form action="" method="post">
+			<?php wp_nonce_field( 'save-sidebar-widgets', '_wpnonce_widgets', false ); ?>
+			</form>
+			<br class="clear" />
+		<input type="hidden" id="taxonomy" name="taxonomyEdited" value="<?php echo $taxonomy?>" />
+		</div><!-- End #pw-sidebars-customize -->
+	</div>
+</div>
+	<?php
+	$content = ob_get_clean();
+	echo $content;
+	exit;
+}
+
 function pw_ajax_toggle_customize() {
 	$status = stripslashes($_POST['pw-customize-sidebars']);
 	$post_id = (int) $_POST['post_id'];
+	
+	$search_page = $_POST['search_page'];
+	
+	$tag_id = (int) $_POST['tag_id'];
+	$taxonomy = $_POST['taxonomy'];
 
 	if ( !in_array($status, array('yes', 'no')) ) $status = 'no';
-
-	$post_type = get_post_type($post_id);
-	$post_type_object = get_post_type_object( $post_type );
-
-	if ( current_user_can($post_type_object->cap->edit_posts) ) {
-		update_post_meta($post_id, '_customize_sidebars', $status);
-		echo 1;
+	
+	if(!empty($post_id)){
+		$post_type = get_post_type($post_id);
+		$post_type_object = get_post_type_object( $post_type );
+		
+		if ( current_user_can($post_type_object->cap->edit_posts) ) {
+			update_post_meta($post_id, '_customize_sidebars', $status);
+			echo 1;
+		}
+	}
+	
+	// For search page
+	else if ( !empty($search_page) ) {
+		update_option('_pw_search_page', $status);
+		echo 'Updated search page option.';
+	}
+	
+	// For taxonomy page
+	else{
+		$objTaxonomy = get_taxonomy($taxonomy);
+		if(current_user_can($objTaxonomy->cap->edit_terms)){
+			$taxonomyMetaData = getTaxonomyMetaData($taxonomy, $tag_id);
+			$taxonomyMetaData['_customize_sidebars'] = $status;
+			updateTaxonomiesMetaData($taxonomy, $tag_id, $taxonomyMetaData);
+			echo 1;
+		}
+		
 	}
 
 	exit(0);
@@ -344,33 +793,42 @@ function pw_save_post($post_id, $post) {
 	return $post_id;
 }
 
-//function pw_ajax_reset_customize() {
-//	global $wpdb;
-//
-//	$post_id = (int) $_POST['post_id'];
-//
-//	$post_type = get_post_type($post_id);
-//	$post_type_object = get_post_type_object( $post_type );
-//
-//	if ( current_user_can($post_type_object->cap->edit_posts) ) {
-//		delete_post_meta($post_id, '_sidebars_widgets');
-//		$wpdb->query($wpdb->prepare("DELETE FROM $wpdb->options WHERE option_name LIKE 'widget_{$post_id}_%%'"));
-//		echo 1;
-//	}
-//
-//	exit(0);
-//}
+function pw_save_term($term_id, $tt_id) {
+	if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return $term_id;
+	if ( isset($_POST['pw-customize-sidebars']) ) {
+		$taxonomyEdited = $_POST['taxonomyEdited'];
+		$status = stripslashes($_POST['pw-customize-sidebars']);
+
+		if ( !in_array($status, array('yes', 'no')) ) $status = 'no';
+		
+		$objTaxonomy = get_taxonomy($taxonomyEdited);
+		if(current_user_can($objTaxonomy->cap->edit_term)){
+			$taxonomyData = getTaxonomyMetaData($taxonomy, $term_id);
+			$taxonomyData['_customize_sidebars'] = $status;
+			updateTaxonomiesMetaData($taxonomy, $term_id, $taxonomyData);
+		}
+	}
+	return $term_id;
+}
 
 function pw_ajax_widgets_order() {
 	check_ajax_referer( 'save-sidebar-widgets', 'savewidgets' );
 
-	if ( !current_user_can('edit_theme_options') )
+	if ( !current_user_can('edit_theme_options') ) {
+		print 'This user is not have access to edit theme options';
 		die('-1');
+	}		
 
-	if ( !$_POST['post_id'] )
+	if ( !$_POST['post_id'] && !$_POST['tag_id'] && !$_POST['search_page'] ) {
+		print 'Not post, taxonomy or search page.';
 		die('-1');
+	}		
 
 	$post_id = stripslashes($_POST['post_id']);
+	$tag_id = stripslashes($_POST['tag_id']);
+	$taxonomy = stripslashes($_POST['taxonomy']);
+	
+	$search_page = stripslashes($_POST['search_page']);
 
 	unset( $_POST['savewidgets'], $_POST['action'] );
 
@@ -390,10 +848,18 @@ function pw_ajax_widgets_order() {
 			}
 			$sidebars[$key] = $sb;
 		}
-		pw_set_sidebars_widgets($sidebars, $post_id);
+		if(!empty($post_id)){
+			pw_set_sidebars_widgets($sidebars, $post_id);
+		} else if ( !empty($search_page) ) {
+			pw_set_sidebars_widgets($sidebars, NULL, NULL, 'search_page');
+		}
+		else{
+			pw_set_sidebars_widgets($sidebars, $tag_id, $taxonomy);
+		}
+		print 'Saved ajax widgets order<br />';
 		die('1');
 	}
-
+	print 'Not save ajax widgets order';
 	die('-1');
 }
 
@@ -405,11 +871,16 @@ function pw_ajax_save_widget() {
 	if ( !current_user_can('edit_theme_options') || !isset($_POST['id_base']) )
 		die('-1');
 
-	if ( !$_POST['post_id'] )
+	if ( !$_POST['post_id'] && !$_POST['tag_id'] && !$_POST['search_page'] )
 		die('-1');
 
 	$post_id = stripslashes($_POST['post_id']);
-
+	$tag_id = stripslashes($_POST['tag_id']);
+	$taxonomy = stripslashes($_POST['taxonomy']);
+	
+	// For search page
+	$search_page = stripslashes($_POST['search_page']);
+	
 	unset( $_POST['savewidgets'], $_POST['action'] );
 
 	do_action('load-widgets.php');
@@ -443,7 +914,9 @@ function pw_ajax_save_widget() {
 		$sidebar[] = $widget_id;
 	}
 	$_POST['widget-id'] = $sidebar;
-
+	
+	
+	// Save widgets
 	if ( !isset($_POST['delete_widget']) && !$_POST['delete_widget'] ) {
 		foreach ( (array) $wp_registered_widget_updates as $name => $control ) {
 
@@ -453,7 +926,7 @@ function pw_ajax_save_widget() {
 
 				// do some hack
 				$number = $multi_number > 0 ? $multi_number : (int)$_POST['widget_number'];
-				#$all_instance = $control['callback'][0]->get_settings();
+				$all_instance = $control['callback'][0]->get_settings();
 
 				if ( !isset($all_instance[$number]) ) { // that's mean new widget was added. => call update function to add widget (globally).
 					ob_start();
@@ -461,7 +934,16 @@ function pw_ajax_save_widget() {
 					ob_end_clean();
 				} else { // mean existing widget was saved. => save separate settings for each post (avoid to overwrite global existing widget data.
 					$widget_obj = &$control['callback'][0];
-					$widget_obj->option_name = 'widget_'.$post_id.'_'.$widget_obj->id_base;
+					if(!empty($post_id)){
+						
+						$widget_obj->option_name = 'widget_'.$post_id.'_'.$widget_obj->id_base;						
+					} else if ( !empty($search_page) ) {
+						$widget_obj->option_name = 'widget_search_'.$widget_obj->id_base;						
+					}
+					else{
+						$optionName = $taxonomy . '_widget_'.$tag_id.'_'.$widget_obj->id_base;
+						$widget_obj->option_name = $optionName;
+					}
 
 					ob_start();
 						call_user_func_array( $control['callback'], $control['params'] );
@@ -474,7 +956,14 @@ function pw_ajax_save_widget() {
 
 	if ( isset($_POST['delete_widget']) && $_POST['delete_widget'] ) {
 		$sidebars[$sidebar_id] = $sidebar;
-		pw_set_sidebars_widgets($sidebars);
+		if(!empty($post_id)){
+			pw_set_sidebars_widgets($sidebars, $post_id);
+		} else if ( !empty($search_page) ) {
+			pw_set_sidebars_widgets($sidebars, NULL, NULL, 'search_page');
+		}
+		else{
+			pw_set_sidebars_widgets($sidebars, $tag_id, $taxonomy);
+		}
 		echo "deleted:$widget_id";
 		die();
 	}
@@ -484,28 +973,71 @@ function pw_ajax_save_widget() {
 
 	if ( $form = $wp_registered_widget_controls[$widget_id] )
 		call_user_func_array( $form['callback'], $form['params'] );
-
+	print 'Updated ajax save widget.';
 	die();
 }
 
 
-function pw_set_sidebars_widgets($sidebars_widgets, $post_id) {
+function pw_set_sidebars_widgets($sidebars_widgets, $post_id, $taxonomy = "", $search_page = NULL) {
 	if ( !isset( $sidebars_widgets['array_version'] ) )
 		$sidebars_widgets['array_version'] = 3;
-	update_post_meta($post_id, '_sidebars_widgets', $sidebars_widgets);
+
+	// Search page
+	if ( $search_page == 'search_page' ) {
+		update_option('_search_page_sidebars_widgets', $sidebars_widgets);
+	}	
+	
+	// For post page
+	elseif(empty($taxonomy)){
+		update_post_meta($post_id, '_sidebars_widgets', $sidebars_widgets);
+	}
+	
+	// Taxonomy page
+	else{
+		$taxonomyData = getTaxonomyMetaData($taxonomy, $post_id);
+		$taxonomyData['_sidebars_widgets'] = $sidebars_widgets;
+		updateTaxonomiesMetaData($taxonomy, $post_id, $taxonomyData);
+	}
 }
 
 function pw_filter_widgets($sidebars_widgets) {
 	global $post, $pagenow;
+	
+	$objTaxonomy = getTaxonomyAccess();
 
-	if ( (is_admin() && !in_array($pagenow, array('post-new.php', 'post.php')))
-		|| (!is_admin() && !is_singular())
-		)
+	if ( 
+			( is_admin() 
+				&& !in_array($pagenow, array('post-new.php', 'post.php', 'edit-tags.php')) 
+				&& ( !in_array($pagenow, array('admin.php')) && (($_GET['page'] == 'pw-front-page') || ($_GET['page'] == 'pw-search-page')) )
+			)
+			
+		|| (!is_admin() && !is_singular() && !is_search() && empty($objTaxonomy['taxonomy']))
+		) {
+		
 		return $sidebars_widgets;
+	}
+	
+	
+	// Search page
+	if ( is_search() || (is_admin() && $_GET['page'] == 'pw-search-page') ) {
+		$enable_customize = get_option('_pw_search_page', true);
+		$_sidebars_widgets = get_option('_search_page_sidebars_widgets', true);		
+	}
+	
 
-	$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
-	$_sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
-
+	// Post page
+	elseif(empty($objTaxonomy['taxonomy'])){
+		$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
+		$_sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
+	}
+	
+	// Taxonomy page
+	else{
+		$taxonomyMetaData = getTaxonomyMetaData($objTaxonomy['taxonomy'], $objTaxonomy['term_id']);
+		$enable_customize = $taxonomyMetaData['_customize_sidebars'];
+		$_sidebars_widgets = $taxonomyMetaData['_sidebars_widgets'];
+	} 
+	
 	if ( $enable_customize == 'yes' && !empty($_sidebars_widgets) ) {
 		if ( is_array( $_sidebars_widgets ) && isset($_sidebars_widgets['array_version']) )
 			unset($_sidebars_widgets['array_version']);
@@ -518,35 +1050,146 @@ function pw_filter_widgets($sidebars_widgets) {
 
 function pw_filter_widget_display_instance($instance, $widget, $args) {
 	global $post;
-
-	$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
-
-	if ( $enable_customize == 'yes' &&  is_singular() ) {
-		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
-
-		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
-
-			$instance = $widget_instance[$widget->number];
+	
+	$objTaxonomy = getTaxonomyAccess();
+	
+	// Search page
+	if ( is_search() ) {		
+		$enable_customize = get_option('_pw_search_page', true);
+		if ( $enable_customize == 'yes' ) {			
+			$widget_instance = get_option('widget_search_'.$widget->id_base);
+			/*
+			print '<pre>';
+var_dump($widget->number);
+var_dump($widget_instance);
+var_dump($widget_instance[3]);
+print '</pre>';
+exit();	// */
+			
+			if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
+				$instance = $widget_instance[$widget->number];
+			}
+		}		
+	}
+	
+	// Use custom widgets for taxonomy page.
+	else if(!empty($objTaxonomy['taxonomy'])){
+		$taxonomy = $objTaxonomy['taxonomy'];
+		$tax_id = $objTaxonomy['term_id'];
+		
+		$taxonomyMetaData = getTaxonomyMetaData($taxonomy, $tax_id);
+		$enable_customize = $taxonomyMetaData['_customize_sidebars'];
+		if ( $enable_customize == 'yes' ) {
+			$widget_instance = get_option($taxonomy . '_widget_'.$tax_id.'_'.$widget->id_base);
+			if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
+				$instance = $widget_instance[$widget->number];
+			}
+		}
+	} elseif(!empty($post->ID)){
+		$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
+		if ( $enable_customize == 'yes' &&  is_singular() ) {
+			$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
+			if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
+				$instance = $widget_instance[$widget->number];
+			}
 		}
 	}
-
+	
 	return $instance;
 }
 
 function pw_filter_widget_form_instance($instance, $widget) {
 	global $post, $pagenow;
+	//print 'Search'; exit();
+	$objTaxonomy = getTaxonomyAccess();
+	
+	$isTaxonomyEdit = $pagenow=="edit-tags.php";
 
 	//$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
 
-	if ( (is_admin() && in_array($pagenow, array('post-new.php', 'post.php'))) ) {
-		$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
+	if ( 
+				(is_admin() && in_array($pagenow, array('post-new.php', 'post.php', "edit-tags.php")))
+				||
+				( is_admin() && in_array($pagenow, array('admin.php')) && (($_GET['page'] == 'pw-front-page') || ($_GET['page'] == 'pw-search-page')) )
+		) {
+		
+		// Search page
+		if ( in_array($pagenow, array('admin.php')) && (($_GET['page'] == 'pw-front-page') || ($_GET['page'] == 'pw-search-page')) ) {
+			$widget_instance = get_option('widget_search_'.$widget->id_base);
+			
+			/*
+			print '<pre>';
+			var_dump($widget_instance);
+			print '</pre>';
+			exit();	// */
+			
+		}
+		
+		elseif(!$isTaxonomyEdit){
+			$widget_instance = get_option('widget_'.$post->ID.'_'.$widget->id_base);
+		}
+		elseif(!empty($objTaxonomy['taxonomy'])){
+			$widget_instance = get_option($objTaxonomy['taxonomy'] . '_widget_'.$objTaxonomy['term_id'].'_'.$widget->id_base);
+		}
 
 		if ( $widget_instance && isset($widget_instance[$widget->number]) ) {
 
 			$instance = $widget_instance[$widget->number];
 		}
 	}
-
 	return $instance;
+}
+
+function getTaxonomyMetaData($taxonomy, $tag_id){
+	$taxonomiesMetaData = getTaxonomiesMetaData($taxonomy);
+	$taxonomyData = isset($taxonomiesMetaData[$tag_id])?$taxonomiesMetaData[$tag_id]:array('_customize_sidebars' => 0, '_sidebars_widgets' => array());
+	return $taxonomyData;
+}
+
+function getTaxonomiesMetaData($taxonomy){
+	$key = "_" . $taxonomy . "_meta_data";
+	$taxonomiesMetaData = get_option($key);
+	if(empty($taxonomiesMetaData) || !is_array($taxonomiesMetaData)){
+		$taxonomiesMetaData = array();
+	}
+	return $taxonomiesMetaData;
+}
+
+function updateTaxonomiesMetaData($taxonomy, $tax_id, $data){
+	$key = "_" . $taxonomy . "_meta_data";
+	$taxonomiesMetaData = get_option($key);
+	$taxonomiesMetaData[$tax_id] = $data;
+	update_option($key, $taxonomiesMetaData);
+}
+
+function getTaxonomyAccess(){
+	global $wp_query;
+	
+	$return = array(
+		'term_id' => "",
+		'taxonomy' => ""
+	);
+	
+	if(!is_admin()){
+		$objRequested = $wp_query->queried_object;
+		//var_dump($wp_query);
+		
+		if(is_object($objRequested)){
+			$return['term_id'] = isset($objRequested->term_id)?$objRequested->term_id:"";
+			$return['taxonomy'] = isset($objRequested->taxonomy)?$objRequested->taxonomy:"";
+		}
+	}
+	else{
+		$link = $_SERVER['REQUEST_URI'];
+		if(strpos($link,"tag_ID=") !== false && strpos($link,"taxonomy=") !== false){
+			$term_id = preg_replace("#(.*)tag_ID=([^&]+)(.*)#","$2",$link);
+			$taxonomy = preg_replace("#(.*)taxonomy=([^&]+)(.*)#","$2",$link);
+			
+			$return['term_id'] = $term_id;
+			$return['taxonomy'] = $taxonomy;
+		}
+	}
+	
+	return $return;
 }
 ?>

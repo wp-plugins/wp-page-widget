@@ -72,3 +72,12 @@
 #donation-message p {
 	font-size: 12px !important;
 }
+
+.postbox h3 {
+	font-size: 15px;
+	font-weight: normal;
+	line-height: 1;
+	margin: 0;
+	padding: 7px 10px;
+	font-family: Georgia,"Times New Roman","Bitstream Charter",Times,serif;
+}

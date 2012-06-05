@@ -170,12 +170,34 @@ wpPWidgets = {
 		if ( sb )
 			$('#' + sb).closest('div.widgets-holder-wrap').find('img.ajax-feedback').css('visibility', 'visible');
 
-		var a = {
-			action: 'pw-widgets-order',
-			post_id: $('#post_ID').val(),
-			savewidgets: $('#_wpnonce_widgets').val(),
-			sidebars: []
-		};
+		if($('#post_ID').length){
+			var a = {
+				action: 'pw-widgets-order',
+				post_id: $('#post_ID').val(),
+				savewidgets: $('#_wpnonce_widgets').val(),
+				sidebars: []
+			};	
+		}
+		
+		// For search page
+		else if ( $('#pw_search_page').length ) {
+			var a = {
+				action: 'pw-widgets-order',
+				search_page: 'yes',
+				savewidgets: $('#_wpnonce_widgets').val(),
+				sidebars: []
+			};
+		}
+		
+		else if($('#tag_ID').length){
+			var a = {
+				action: 'pw-widgets-order',
+				tag_id: $('#tag_ID').val(),
+				taxonomy: $('#taxonomy').val(),
+				savewidgets: $('#_wpnonce_widgets').val(),
+				sidebars: []
+			};	
+		}
 
 		$('div.widgets-sortables').each( function() {
 			a['sidebars[' + $(this).attr('id') + ']'] = $(this).sortable('toArray').join(',');
@@ -200,13 +222,35 @@ wpPWidgets = {
 		}
 		widget = $(widget);
 		$('.ajax-feedback', widget).css('visibility', 'visible');
-
-		a = {
-			action: 'pw-save-widget',
-			post_id: $('#post_ID').val(),
-			savewidgets: $('#_wpnonce_widgets').val(),
-			sidebar: sb
-		};
+		if($('#post_ID').length){
+			a = {
+				action: 'pw-save-widget',
+				post_id: $('#post_ID').val(),
+				savewidgets: $('#_wpnonce_widgets').val(),
+				sidebar: sb
+			};
+		}
+		
+		// For search page
+		else if ( $('#pw_search_page').length ) {
+			a = {
+				action: 'pw-save-widget',
+				search_page: 'yes',
+				savewidgets: $('#_wpnonce_widgets').val(),
+				sidebar: sb
+			};
+		} 
+		
+		// For taxonomy page		
+		else if($('#tag_ID').length){
+			a = {
+				action: 'pw-save-widget',
+				tag_id: $('#tag_ID').val(),
+				taxonomy: $('#taxonomy').val(),
+				savewidgets: $('#_wpnonce_widgets').val(),
+				sidebar: sb
+			};	
+		}
 
 		if ( del )
 			a['delete_widget'] = 1;
@@ -289,20 +333,57 @@ wpPWidgets = {
 };
 
 $(document).ready(function($){
+	/*if($("#addtag").length){
+		var taxonomyAdd = $("input[name='taxonomy']", "#addtag").val();
+		var data = { action: 'pw-get-taxonomy-widget', taxonomy: taxonomyAdd };
+		$.ajax({
+			url: ajaxurl,
+			data: data,
+			async: false,
+			type: "POST",
+			dataType: "html",
+			success: function(data) {
+				$(data).insertBefore("#addtag .submit");
+			}
+		});
+	}*/
 	wpPWidgets.init();
 
 	$('.pw-toggle-customize').click(function(e) {
 		if ( adminpage == 'post-new-php' ) return true;
 
 		var t = this;
-		var post_id = $('#post_ID').val();
-
-		$.post(ajaxurl, {action: 'pw-toggle-customize', post_id: post_id, 'pw-customize-sidebars': $(t).val()}, function() {
+		if($('#post_ID').length){
+			var post_id = $('#post_ID').val();
+	
+			$.post(ajaxurl, {action: 'pw-toggle-customize', post_id: post_id, 'pw-customize-sidebars': $(t).val()}, function() {
+				
+			});
+		}
+		
+		// For search page
+		else if ( $('#pw_search_page').length ) {
+			$.post(ajaxurl, {action: 'pw-toggle-customize', search_page: 'yes', 'pw-customize-sidebars': $(t).val()}, function() {});
 			
-		});
+		} 
+		
+		// For taxonomy page
+		else{
+			var tag_id = $('#tag_ID').val();
+			var taxonomy = $('#taxonomy').val();
+	
+			$.post(ajaxurl, {action: 'pw-toggle-customize', tag_id: tag_id, taxonomy: taxonomy, 'pw-customize-sidebars': $(t).val()}, function() {
+				
+			});	
+		}
 
 		return true;
 	});
+	
+	if($("#edittag").length){
+		$("#edittag").next().clone().appendTo("#edittag");
+		$("#edittag").next().remove();
+	}
 
 });
 
