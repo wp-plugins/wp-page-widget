@@ -3,7 +3,7 @@ Contributors: CodeAndMore
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6
 Tags: widget, page, post, single, wordpress, custom post type
 Requires at least: 2.5
-Tested up to: 3.3.2
+Tested up to: 3.4.1
 Stable tag: trunk
 
 Select widgets for each page / post / custom post type. For every single page / post / custom post type
@@ -56,6 +56,8 @@ The interface is integrated to category/taxonomy editing screen just like you ed
 
 
 == Changelog ==
+= 1.7 (2012-09-19) =
+* Compatibility with Flexi page widget, Custom Post Widget plugin.
 = 1.6 (2012-02-03) =
 * Add several more features: search, blog, category, taxonomy configurable pages.
 = 1.5 (2012-02-03) =
