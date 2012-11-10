@@ -4,11 +4,11 @@
   Plugin URI: http://codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 1.7
+  Version: 1.8
   Author URI: http://codeandmore.com/
  */
 
-define('PAGE_WIDGET_VERSION', '1.7');
+define('PAGE_WIDGET_VERSION', '1.8');
 
 /* Hooks */
 add_action('admin_init', 'pw_init');
@@ -70,6 +70,10 @@ function pw_init() {
 		$upgraded = true;
 	}
 	if (version_compare($current_version, '1.7', '<')) {
+		// do nothing
+		$upgraded = true;
+	}
+	if (version_compare($current_version, '1.8', '<')) {
 		// do nothing
 		$upgraded = true;
 	}
