@@ -1054,7 +1054,6 @@ function pw_filter_widgets($sidebars_widgets) {
 	if (is_search() || (is_admin() && $_GET['page'] == 'pw-search-page')) {
 		$enable_customize = get_option('_pw_search_page', true);
 		$_sidebars_widgets = get_option('_search_page_sidebars_widgets', true);
-		//var_dump($enable_customize);
 	}
 
 
@@ -1064,13 +1063,11 @@ function pw_filter_widgets($sidebars_widgets) {
 		//Fix conflic when other plugins use query post after load editing post!
 		$postID = $_GET['post'];
 		if (is_admin() && isset($postID)) {
-			$post->ID = $postID;
+			if ( !is_object($post) ) $post = new stdClass();
+				$post->ID = $postID;
 		}
 		$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
 		$_sidebars_widgets = get_post_meta($post->ID, '_sidebars_widgets', true);
-
-
-		//var_dump($_sidebars_widgets);
 	}
 
 	// Taxonomy page
