@@ -101,10 +101,10 @@ wpPWidgets = {
 				ui.item.css({'marginLeft':'','width':''});
 			},
 			stop: function(e,ui) {
-				if ( ui.item.hasClass('ui-draggable') )
+				if ( ui.item.hasClass('ui-draggable') && ui.item.data('draggable') )
 					ui.item.draggable('destroy');
-
-				if ( ui.item.hasClass('deleting') ) {
+				
+				if ( ui.item.hasClass('deleting') ) { // nay roi
 					wpPWidgets.save( ui.item, 1, 0, 1 ); // delete widget
 					ui.item.remove();
 					return;
@@ -115,7 +115,7 @@ wpPWidgets = {
 					//id = ui.item.attr('id'),
 					id = the_id,
 					sb = $(this).attr('id');
-					console.log(ui.item);
+//					console.log(ui.item);
 				ui.item.css({'marginLeft':'','width':''});
 				wpPWidgets.fixWebkit();
 				if ( add ) {
