@@ -98,7 +98,7 @@ function pw_print_scripts() {
 	) {
 
 		if (is_plugin_active('image-widget/image-widget.php')) {
-			wp_enqueue_script('pw-widgets2', WP_PLUGIN_URL . '/image-widget/image-widget.js', array('thickbox'), false, true);
+			wp_enqueue_script('pw-widgets2', WP_PLUGIN_URL . '/image-widget/resources/js/image-widget.js', array('thickbox'), false, true);
 		}
 		wp_enqueue_script('pw-widgets', plugin_dir_url(__FILE__) . 'assets/js/page-widgets.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), '1.1', true);
 	}
@@ -911,12 +911,16 @@ function pw_ajax_save_widget() {
 	if (!$_POST['post_id'] && !$_POST['tag_id'] && !$_POST['search_page'])
 		die('-1');
 	
-	$post_id = stripslashes($_POST['post_id']);
-	$tag_id = stripslashes($_POST['tag_id']);
-	$taxonomy = stripslashes($_POST['taxonomy']);
+	if (isset($_POST['post_id']))
+		$post_id = stripslashes($_POST['post_id']);
+	if (isset($_POST['tag_id']))
+		$tag_id = stripslashes($_POST['tag_id']);
+	if (isset($_POST['taxonomy']))
+		$taxonomy = stripslashes($_POST['taxonomy']);
 	
 	// For search page
-	$search_page = stripslashes($_POST['search_page']);
+	if (isset($_POST['search_page']))
+		$search_page = stripslashes($_POST['search_page']);
 	
 	unset($_POST['savewidgets'], $_POST['action']);
 
@@ -954,7 +958,9 @@ function pw_ajax_save_widget() {
 
 
 	// Save widgets
-	if (!isset($_POST['delete_widget']) && !$_POST['delete_widget']) {
+	//var_dump(isset($_POST));
+	if (!isset($_POST['delete_widget']) || !$_POST['delete_widget']) {
+	//if (!isset($_POST['delete_widget']) && !$_POST['delete_widget']) {
 		foreach ((array) $wp_registered_widget_updates as $name => $control) {
 
 			if ($name == $id_base) {
@@ -1012,8 +1018,8 @@ function pw_ajax_save_widget() {
 
 	if ($form = $wp_registered_widget_controls[$widget_id])
 		call_user_func_array($form['callback'], $form['params']);
-	print 'Updated ajax save widget.';
-	die();
+	//print 'Updated ajax save widget.';
+	//die();
 }
 
 function pw_set_sidebars_widgets($sidebars_widgets, $post_id, $taxonomy = "", $search_page = NULL) {
@@ -1046,7 +1052,7 @@ function pw_filter_widgets($sidebars_widgets) {
 	if (
 			( is_admin()
 			&& !in_array($pagenow, array('post-new.php', 'post.php', 'edit-tags.php'))
-			&& (!in_array($pagenow, array('admin.php')) && (($_GET['page'] == 'pw-front-page') || $_GET['page'] == 'pw-search-page')) 
+			&& (!in_array($pagenow, array('admin.php')) && (isset($_GET['page']) && ($_GET['page'] == 'pw-front-page') || isset($_GET['page']) && $_GET['page'] == 'pw-search-page')) 
 			)
 			|| (!is_admin() && !is_singular() && !is_search() && empty($objTaxonomy['taxonomy']))
 	) {
@@ -1056,7 +1062,7 @@ function pw_filter_widgets($sidebars_widgets) {
 
 
 	// Search page
-	if (is_search() || (is_admin() && ($_GET['page'] == 'pw-search-page'))) {
+	if (is_search() || (is_admin() && (isset($_GET['page']) && $_GET['page'] == 'pw-search-page'))) {
 		$enable_customize = get_option('_pw_search_page', true);
 		$_sidebars_widgets = get_option('_search_page_sidebars_widgets', true);
 	}
@@ -1066,7 +1072,10 @@ function pw_filter_widgets($sidebars_widgets) {
 	elseif (empty($objTaxonomy['taxonomy'])) {
 		//if admin alway use query string post = ID
 		//Fix conflic when other plugins use query post after load editing post!
-		$postID = $_GET['post'];
+
+		if ( is_object($post) && isset($_GET['post']) ) {
+			$postID = $_GET['post'];
+		}
 		if (is_admin() && isset($postID)) {
 			if ( !is_object($post) ) $post = new stdClass();
 				$post->ID = $postID;
@@ -1237,13 +1246,16 @@ function getTaxonomyAccess() {
 	return $return;
 }
 
-// Add fake
-add_action('admin_head', 'pw_admin_head');
+/*
+Not need this action http://wordpress.org/support/topic/incompatibility-with-black-studio-tinymce-widget?replies=1
+add_action('admin_init', 'pw_admin_head');
 
 function pw_admin_head() {
 	global $pagenow;
 		if (
-			in_array($pagenow, array('post-new.php', 'post.php', 'edit-tags.php'))
+			in_array($pagenow, array('post-new.php', 'post.php'))
+			||
+			(($pagenow == 'edit-tags.php') && isset($_GET['action']) && $_GET['action'] == 'edit')
 			||
 			// Page widget config for front page, search page
 			( in_array($pagenow, array('admin.php')) && (($_GET['page'] == 'pw-front-page') || ($_GET['page'] == 'pw-search-page')) )
@@ -1259,3 +1271,4 @@ function pw_admin_head() {
 		}
 	}
 }
+*/

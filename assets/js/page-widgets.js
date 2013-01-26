@@ -32,9 +32,9 @@ wpPWidgets = {
 
 			if ( inside.is(':hidden') ) {
 				if ( w > 250 && inside.closest('div.widgets-sortables').length ) {
-					css['width'] = w + 30 + 'px';
+					css['width'] = w - 75 + 'px';
 					if ( inside.closest('div.widget-liquid-right').length )
-						css['marginLeft'] = 235 - w + 'px';
+						css['marginLeft'] = 340 - w + 'px';
 					widget.css(css);
 				}
 				wpPWidgets.fixLabels(widget);
