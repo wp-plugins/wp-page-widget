@@ -56,6 +56,8 @@ The interface is integrated to category/taxonomy editing screen just like you ed
 
 
 == Changelog ==
+= 2.0 (2013-03-04)
+* Compatibility with Image Widget plugin.
 = 1.9 (2012-12-17) =
 * Compatibility with WordPress 3.5
 = 1.8 (2012-11-10) =

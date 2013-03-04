@@ -4,11 +4,11 @@
   Plugin URI: http://www.codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 1.9
+  Version: 2.0
   Author URI: http://www.codeandmore.com/
  */
 
-define('PAGE_WIDGET_VERSION', '1.8');
+define('PAGE_WIDGET_VERSION', '1.9');
 
 /* Hooks */
 add_action('admin_init', 'pw_init');
@@ -81,6 +81,10 @@ function pw_init() {
 		// do nothing
 		$upgraded = true;
 	}
+	if (version_compare($current_version, '2.0', '<')) {
+		// do nothing
+		$upgraded = true;
+	}
 	if ($upgraded) {
 		update_option('page_widget_version', PAGE_WIDGET_VERSION);
 	}
@@ -96,9 +100,12 @@ function pw_print_scripts() {
 			// Page widget config for front page, search page
 			( in_array($pagenow, array('admin.php')) && (($_GET['page'] == 'pw-front-page') || ($_GET['page'] == 'pw-search-page')) )
 	) {
-
 		if (is_plugin_active('image-widget/image-widget.php')) {
-			wp_enqueue_script('pw-widgets2', WP_PLUGIN_URL . '/image-widget/resources/js/image-widget.js', array('thickbox'), false, true);
+			wp_enqueue_script('tribe-image-widget', WP_PLUGIN_URL . '/image-widget/resources/js/image-widget.js', array('jquery', 'media-upload', 'media-views'), false, true);
+			wp_localize_script( 'tribe-image-widget', 'TribeImageWidget', array(
+			'frame_title' => __( 'Select an Image', 'image_widget' ),
+			'button_title' => __( 'Insert Into Widget', 'image_widget' ),
+			) );
 		}
 		wp_enqueue_script('pw-widgets', plugin_dir_url(__FILE__) . 'assets/js/page-widgets.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), '1.1', true);
 	}
