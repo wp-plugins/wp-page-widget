@@ -1025,8 +1025,8 @@ function pw_ajax_save_widget() {
 
 	if ($form = $wp_registered_widget_controls[$widget_id])
 		call_user_func_array($form['callback'], $form['params']);
-	//print 'Updated ajax save widget.';
-	//die();
+	print 'Updated ajax save widget.';
+	die();
 }
 
 function pw_set_sidebars_widgets($sidebars_widgets, $post_id, $taxonomy = "", $search_page = NULL) {
