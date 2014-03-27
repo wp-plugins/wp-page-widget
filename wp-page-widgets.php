@@ -226,6 +226,15 @@ function pw_settings_page() {
 									?>
 								</td>
 							</tr>
+                            
+                            <tr>
+								<th>Select Customize by default (when adding new)</th>
+								<td>
+									<input type="radio" name="pw_opts[customize_by_default]" value="yes" <?php checked("yes", $opts['customize_by_default']) ?> /> Yes, I want to select Customize when adding new things.
+									<br />
+									<input type="radio" name="pw_opts[customize_by_default]" value="no" <?php checked("no", $opts['customize_by_default']) ?> /> No, I want to select Default setting when adding new things.
+								</td>
+							</tr>
 						</table>
 						<p class="submit">
 							<input type="submit" class="button-primary" name="save-changes" value="Save Changes" />
@@ -293,7 +302,6 @@ function pw_search_page() {
 				</div>
 
 				<div style="padding: 5px;">
-				<!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
 					<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
 					&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
 					<br class="clear" />
@@ -425,6 +433,7 @@ function pw_front_page() {
 function pw_get_settings() {
 	$defaults = array(
 		'donation' => 'no',
+		'customize_by_default' => 'no',
 		'post_types' => array('post', 'page'),
 		'sidebars' => array(),
 	);
@@ -463,8 +472,13 @@ function pw_metabox_content($post) {
 
 
 	$customize = get_post_meta($post->ID, '_customize_sidebars', true);
-	if (!$customize)
-		$customize = 'no';
+	if (!$customize) {		
+		if ($settings['customize_by_default'] == "yes") {
+			$customize = 'yes';
+		} else {
+			$customize = 'no';	
+		}
+	}
 
 	// include widgets function
 	if (!function_exists('wp_list_widgets'))
