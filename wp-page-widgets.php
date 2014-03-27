@@ -150,7 +150,7 @@ function pw_admin_menu() {
 
 	$settings = pw_get_settings();
 
-	if (current_user_can('edit_post')) {
+	if (current_user_can('edit_posts')) {
 		// add Page Widgets metabox
 		foreach ($settings['post_types'] as $post_type) {
 			add_meta_box('pw-widgets', 'Page Widgets', 'pw_metabox_content', $post_type, 'advanced', 'high');
@@ -955,7 +955,7 @@ function pw_save_term($term_id, $tt_id) {
 function pw_ajax_widgets_order() {
 	check_ajax_referer('save-sidebar-widgets', 'savewidgets');
 
-	if (!current_user_can('edit_post')) {
+	if (!current_user_can('edit_posts')) {
 		print 'This user is not have access to edit theme options';
 		die('-1');
 	}
@@ -1009,7 +1009,7 @@ function pw_ajax_save_widget() {
 
 	check_ajax_referer('save-sidebar-widgets', 'savewidgets');
 
-	if (!current_user_can('edit_post') || !isset($_POST['id_base']))
+	if (!current_user_can('edit_posts') || !isset($_POST['id_base']))
 		die('-1');
 
 	if (!$_POST['post_id'] && !$_POST['tag_id'] && !$_POST['search_page'])
