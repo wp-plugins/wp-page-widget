@@ -4,13 +4,14 @@
   Plugin URI: http://www.codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 2.3
+  Version: 2.4
   Author URI: http://www.codeandmore.com/
  */
 
-define('PAGE_WIDGET_VERSION', '2.3');
+define('PAGE_WIDGET_VERSION', '2.4');
 
 /* Hooks */
+add_action('plugins_loaded', 'pw_load_plugin_textdomain');
 add_action('admin_init', 'pw_init');
 add_action('admin_print_scripts', 'pw_print_scripts');
 add_action('admin_print_styles', 'pw_print_styles');
@@ -23,17 +24,23 @@ add_action('wp_ajax_pw-widgets-order', 'pw_ajax_widgets_order');
 add_action('wp_ajax_pw-save-widget', 'pw_ajax_save_widget');
 add_action('wp_ajax_pw-toggle-customize', 'pw_ajax_toggle_customize');
 add_action('wp_ajax_pw-get-taxonomy-widget', 'pw_returnTaxonomyWidget');
+add_action('wp_ajax_pw-remove-inactive-widget', 'pw_ajax_remove_inactive_widget');
 
 /* Filters */
 add_filter('sidebars_widgets', 'pw_filter_widgets');
 add_filter('widget_display_callback', 'pw_filter_widget_display_instance', 10, 3);
 add_filter('widget_form_callback', 'pw_filter_widget_form_instance', 10, 2);
 
+function pw_load_plugin_textdomain()
+{
+	load_plugin_textdomain('wp-page-widgets', false, basename( dirname( __FILE__ ) ) . '/languages' );
+}
+
 function pw_init() {
 	global $wpdb;
 
 	$current_version = get_option('page_widget_version', '1.0');
-	$upgraded = false;
+	$upgraded        = false;
 
 	if (version_compare($current_version, '1.1', '<')) {
 		// we set enable customize sidebars for posts which hve been customized before.
@@ -146,7 +153,7 @@ function pw_print_styles() {
 	} else {
 		wp_enqueue_style('pw-style', plugin_dir_url(__FILE__) . 'assets/css/style-3.8.css', array(), PAGE_WIDGET_VERSION);
 	}
-	
+
 }
 
 function pw_admin_menu() {
@@ -157,7 +164,7 @@ function pw_admin_menu() {
 	if (current_user_can('edit_posts')) {
 		// add Page Widgets metabox
 		foreach ($settings['post_types'] as $post_type) {
-			add_meta_box('pw-widgets', 'Page Widgets', 'pw_metabox_content', $post_type, 'advanced', 'high');
+			add_meta_box('pw-widgets', __('Page Widgets', 'wp-page-widgets'), 'pw_metabox_content', $post_type, 'advanced', 'high');
 		}
 
 		//add Taxonomy Widgets metabox
@@ -169,12 +176,12 @@ function pw_admin_menu() {
 	// options page
 	// add_options_page('Page Widgets', 'Page Widgets', 'manage_options', 'pw-settings', 'pw_settings_page');
 	// Menu page
-	add_menu_page('Page Widgets', 'Page Widgets', 'manage_options', 'pw-settings', 'pw_settings_page');
+	add_menu_page('Page Widgets', __('Page Widgets', 'wp-page-widgets'), 'manage_options', 'pw-settings', 'pw_settings_page');
 
 	// Add a submenu to the custom top-level menu: front page
 	//add_submenu_page('pw-settings', 'Front page', 'Front page', 'manage_options', 'pw-front-page', 'pw_front_page');
 	// Add a submenu to the custom top-level menu: search page
-	add_submenu_page('pw-settings', 'Search page', 'Search page', 'manage_options', 'pw-search-page', 'pw_search_page');
+	add_submenu_page('pw-settings', __('Search page', 'wp-page-widgets'), __('Search page', 'wp-page-widgets'), 'manage_options', 'pw-search-page', 'pw_search_page');
 }
 
 function pw_settings_page() {
@@ -184,7 +191,7 @@ function pw_settings_page() {
 		$opts = stripslashes_deep($_POST['pw_opts']);
 
 		update_option('pw_options', $opts);
-		echo '<div id="message" class="updated fade"><p>Saved Changes</p></div>';
+		echo '<div id="message" class="updated fade"><p>'.__('Saved Changes', 'wp-page-widgets').'</p></div>';
 	}
 
 	$opts = pw_get_settings();
@@ -192,7 +199,7 @@ function pw_settings_page() {
 	?>
 
 	<div class="wrap">
-		<h2>Settings - Page Widgets</h2>
+		<h2><?php _e('Settings - Page Widgets', 'wp-page-widgets'); ?></h2>
 
 		<div class="liquid-wrap">
 			<div class="liquid-left">
@@ -200,16 +207,16 @@ function pw_settings_page() {
 					<form action="" method="post">
 						<table class="form-table">
 							<tr>
-								<th>Would you like to make a donation?</th>
+								<th><?php _e('Would you like to make a donation?', 'wp-page-widgets')?></th>
 								<td>
-									<input type="radio" name="pw_opts[donation]" value="yes" <?php checked("yes", $opts['donation']) ?> /> Yes I have donated at least $5. Thank you for your nice work. And hide the donation message please. <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">Donate Now</a>.
+									<input type="radio" name="pw_opts[donation]" value="yes" <?php checked("yes", $opts['donation']) ?> /> <?php _e('Yes I have donated at least $5. Thank you for your nice work. And hide the donation message please.', 'wp-page-widgets'); ?> <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6"><?php _e('Donate Now', 'wp-page-widgets'); ?></a>.
 									<br />
-									<input type="radio" name="pw_opts[donation]" value="no" <?php checked("no", $opts['donation']) ?> /> No, I want to use this without donation.
+									<input type="radio" name="pw_opts[donation]" value="no" <?php checked("no", $opts['donation']) ?> /> <?php _e('No, I want to use this without donation.', 'wp-page-widgets'); ?>
 
 								</td>
 							</tr>
 							<tr>
-								<th>Available for post type</th>
+								<th><?php _e('Available for post type', 'wp-page-widgets'); ?></th>
 								<td>
 									<?php
 									foreach ($post_types as $post_type => $post_type_obj) {
@@ -221,7 +228,7 @@ function pw_settings_page() {
 								</td>
 							</tr>
 							<tr>
-								<th>Which sidebars you want to customize</th>
+								<th><?php _e('Which sidebars you want to customize', 'wp-page-widgets'); ?></th>
 								<td>
 									<?php
 									foreach ($wp_registered_sidebars as $sidebar => $registered_sidebar) {
@@ -230,18 +237,18 @@ function pw_settings_page() {
 									?>
 								</td>
 							</tr>
-                            
+
                             <tr>
-								<th>Select Customize by default (when adding new)</th>
+								<th><?php _e('Select Customize by default (when adding new)', 'wp-page-widgets'); ?></th>
 								<td>
-									<input type="radio" name="pw_opts[customize_by_default]" value="yes" <?php checked("yes", $opts['customize_by_default']) ?> /> Yes, I want to select Customize when adding new things.
+									<input type="radio" name="pw_opts[customize_by_default]" value="yes" <?php checked("yes", $opts['customize_by_default']) ?> /> <?php _e('Yes, I want to select Customize when adding new things.', 'wp-page-widgets'); ?>
 									<br />
-									<input type="radio" name="pw_opts[customize_by_default]" value="no" <?php checked("no", $opts['customize_by_default']) ?> /> No, I want to select Default setting when adding new things.
+									<input type="radio" name="pw_opts[customize_by_default]" value="no" <?php checked("no", $opts['customize_by_default']) ?> /> <?php _e('No, I want to select Default setting when adding new things.', 'wp-page-widgets'); ?>
 								</td>
 							</tr>
 						</table>
 						<p class="submit">
-							<input type="submit" class="button-primary" name="save-changes" value="Save Changes" />
+							<input type="submit" class="button-primary" name="save-changes" value="<?php _e('Save Changes', 'wp-page-widgets'); ?>" />
 						</p>
 					</form>
 				</div>
@@ -253,7 +260,7 @@ function pw_settings_page() {
 															<div class="handlediv"><br /></div>
 															<h3 class="hndle">Test</h3>
 															<div class="inside">
-					
+
 															</div>
 													</div>-->
 				</div>
@@ -292,22 +299,22 @@ function pw_search_page() {
 		require_once(ABSPATH . '/wp-admin/includes/widgets.php');
 	?>
 	<div class="wrap">
-		<h2>Page widgets for Search page</h2>
+		<h2><?php _e('Page widgets for Search page', 'wp-page-widgets'); ?></h2>
 		<div class="postbox " id="pw-widgets">
-			<div title="Click to toggle" class="handlediv"><br></div>
-			<h3 class="hndle"><span>Widgets area</span></h3>
+			<div title="<?php _e('Click to toggle', 'wp-page-widgets'); ?>" class="handlediv"><br></div>
+			<h3 class="hndle"><span><?php _e('Widgets area', 'wp-page-widgets'); ?></span></h3>
 			<div class="inside">
 				<div style="padding: 5px;">
 					<?php
 					if ($settings['donation'] != 'yes') {
-						echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="' . admin_url('options-general.php?page=pw-settings') . '"><small>Hide this donation message</small></a>.</p></div>';
+						echo '<div id="donation-message"><p>'.__('Thank you for using this plugin. If you appreciate our works, please consider to', 'wp-page-widgets').' <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">'.__('donate us', 'wp-page-widgets').'</a>. '.__('With your help, we can continue supporting and developing this plugin.', 'wp-page-widgets').'<br /><a href="' . admin_url('options-general.php?page=pw-settings') . '"><small>'.__('Hide this donation message', 'wp-page-widgets').'</small></a>.</p></div>';
 					}
 					?>
 				</div>
 
 				<div style="padding: 5px;">
-					<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
-					&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
+					<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> <?php _e('Default', 'wp-page-widgets');?> (<?php _e('follow', 'wp-page-widgets'); ?> <a href="<?php echo admin_url('widgets.php') ?>"><?php _e('Widgets settings', 'wp-page-widgets');?></a>)
+					&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> <?php _e('Customize', 'wp-page-widgets');?>
 					<br class="clear" />
 				</div>
 
@@ -338,7 +345,7 @@ function pw_search_page() {
 									<div class="sidebar-name-arrow"><br /></div>
 									<h3><?php _e('Inactive Widgets'); ?>
                   	<?php
-                    if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {	
+                    if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 										?>
 											<span><img src="<?php echo esc_url(admin_url('images/wpspin_light.gif')); ?>" class="ajax-feedback" title="" alt="" /></span>
 										<?php
@@ -375,7 +382,7 @@ function pw_search_page() {
 										<div class="sidebar-name-arrow"><br /></div>
 										<h3><?php echo esc_html($registered_sidebar['name']); ?>
 											<?php
-											if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {	
+											if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 											?>
 												<span><img src="<?php echo esc_url(admin_url('images/wpspin_light.gif')); ?>" class="ajax-feedback" title="" alt="" /></span>
 											<?php
@@ -411,20 +418,20 @@ function pw_search_page() {
 function pw_front_page() {
 	?>
 	<div class="wrap">
-		<h2>Page widgets for Front page - only latest posts option</h2>
+		<h2><?php _e('Page widgets for Front page - only latest posts option', 'wp-page-widgets'); ?></h2>
 		<div class="liquid-left">
 			<div class="panel-left">
 				<form action="" method="post">
 					<table class="form-table">
 						<tr>
-							<th>Enable for drag edit Category</th>
+							<th><?php _e('Enable for drag edit Category', 'wp-page-widgets'); ?></th>
 							<td>
 								<input type="checkbox" class="tag-checked" />
 							</td>
 						</tr>
 					</table>
 					<p class="submit">
-						<input type="submit" class="button-primary" name="save-changes" value="Save Changes" />
+						<input type="submit" class="button-primary" name="save-changes" value="<?php _e('Save Changes', 'wp-page-widgets'); ?>" />
 					</p>
 				</form>
 			</div>
@@ -444,14 +451,14 @@ function pw_get_settings() {
 	//get list taxonomies registered in system
 	$defaults['taxonomies'] = array();
 	$taxonomies = get_taxonomies(array('show_ui' => true));
-	
+
 	foreach ($taxonomies as $taxonomy) {
 		$defaults['taxonomies'][] = $taxonomy;
 	}
-	
+
 	$settings = get_option('pw_options', array());
 	return wp_parse_args($settings, $defaults);
-	
+
 }
 
 function pw_metabox_content($post) {
@@ -476,11 +483,11 @@ function pw_metabox_content($post) {
 
 
 	$customize = get_post_meta($post->ID, '_customize_sidebars', true);
-	if (!$customize) {		
+	if (!$customize) {
 		if ($settings['customize_by_default'] == "yes") {
 			$customize = 'yes';
 		} else {
-			$customize = 'no';	
+			$customize = 'no';
 		}
 	}
 
@@ -492,15 +499,15 @@ function pw_metabox_content($post) {
 	<div style="padding: 5px;">
 		<?php
 		if ($settings['donation'] != 'yes') {
-			echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="' . admin_url('options-general.php?page=pw-settings') . '"><small>Hide this donation message</small></a>.</p></div>';
+			echo '<div id="donation-message"><p>'.__('Thank you for using this plugin. If you appreciate our works, please consider to', 'wp-page-widgets').' <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">'.__('donate us', 'wp-page-widgets').'</a>. '.__('With your help, we can continue supporting and developing this plugin.', 'wp-page-widgets').'<br /><a href="' . admin_url('options-general.php?page=pw-settings') . '"><small>'.__('Hide this donation message', 'wp-page-widgets').'</small></a>.</p></div>';
 		}
 		?>
 	</div>
 
 	<div style="padding: 5px;">
 	<!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
-		<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
-		&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
+		<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> <?php _e('Default', 'wp-page-widgets'); ?> (<?php _e('follow', 'wp-page-widgets');?> <a href="<?php echo admin_url('widgets.php') ?>"><?php _e('Widgets settings', 'wp-page-widgets'); ?></a>)
+		&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> <?php _e('Customize', 'wp-page-widgets'); ?>
 		<br class="clear" />
 	</div>
 
@@ -531,7 +538,7 @@ function pw_metabox_content($post) {
 						<div class="sidebar-name-arrow"><br /></div>
 						<h3><?php _e('Inactive Widgets'); ?>
 							<?php
-							if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {	
+							if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 							?>
 								<span><img src="<?php echo esc_url(admin_url('images/wpspin_light.gif')); ?>" class="ajax-feedback" title="" alt="" /></span>
 							<?php
@@ -567,7 +574,7 @@ function pw_metabox_content($post) {
 							<div class="sidebar-name-arrow"><br /></div>
 							<h3><?php echo esc_html($registered_sidebar['name']); ?>
 								<?php
-								if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {	
+								if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 								?>
 									<span><img src="<?php echo esc_url(admin_url('images/wpspin_light.gif')); ?>" class="ajax-feedback" title="" alt="" /></span>
 								<?php
@@ -634,15 +641,15 @@ function pw_showTaxonomyWidget($tag, $taxonomy) {
 			<div style="padding: 5px;">
 				<?php
 				if ($settings['donation'] != 'yes') {
-					echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="' . admin_url('options-general.php?page=pw-settings') . '"><small>Hide this donation message</small></a>.</p></div>';
+					echo '<div id="donation-message"><p>'.__('Thank you for using this plugin. If you appreciate our works, please consider to', 'wp-page-widgets').' <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">'.__('donate us', 'wp-page-widgets').'</a>. '.__('With your help, we can continue supporting and developing this plugin.', 'wp-page-widgets').'<br /><a href="' . admin_url('options-general.php?page=pw-settings') . '"><small>'.__('Hide this donation message', 'wp-page-widgets').'</small></a>.</p></div>';
 				}
 				?>
 			</div>
 
 			<div style="padding: 5px;">
 			<!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
-				<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
-				&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
+				<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>"><?php _e('Widgets settings', 'wp-page-widgets');?></a>)
+				&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> <?php _e('Customize', 'wp-page-widgets');?>
 				<br class="clear" />
 			</div>
 
@@ -673,7 +680,7 @@ function pw_showTaxonomyWidget($tag, $taxonomy) {
 								<div class="sidebar-name-arrow"><br /></div>
 								<h3><?php _e('Inactive Widgets'); ?>
 									<?php
-											if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {	
+											if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 											?>
 												<span><img src="<?php echo esc_url(admin_url('images/wpspin_light.gif')); ?>" class="ajax-feedback" title="" alt="" /></span>
 											<?php
@@ -709,7 +716,7 @@ function pw_showTaxonomyWidget($tag, $taxonomy) {
 									<div class="sidebar-name-arrow"><br /></div>
 									<h3><?php echo esc_html($registered_sidebar['name']); ?>
 										<?php
-											if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {	
+											if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 											?>
 												<span><img src="<?php echo esc_url(admin_url('images/wpspin_light.gif')); ?>" class="ajax-feedback" title="" alt="" /></span>
 											<?php
@@ -773,20 +780,20 @@ function pw_returnTaxonomyWidget() {
 	?>
 	<div class="postbox " id="pw-widgets">
 		<div title="Click to toggle" class="handlediv"><br></div>
-		<h3 class="hndle"><span><?php echo ucwords(str_replace("_", " ", $taxonomy)) ?> Widgets</span></h3>
+		<h3 class="hndle"><span><?php echo ucwords(str_replace("_", " ", $taxonomy)) ?> <?php _e('Widgets', 'wp-page-widgets');?></span></h3>
 		<div class="inside">
 			<div style="padding: 5px;">
 				<?php
 				if ($settings['donation'] != 'yes') {
-					echo '<div id="donation-message"><p>Thank you for using this plugin. If you appreciate our works, please consider to <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">donate us</a>. With your help, we can continue supporting and developing this plugin.<br /><a href="' . admin_url('options-general.php?page=pw-settings') . '"><small>Hide this donation message</small></a>.</p></div>';
+					echo '<div id="donation-message"><p>'.__('Thank you for using this plugin. If you appreciate our works, please consider to', 'wp-page-widgets').' <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6">'.__('donate us', 'wp-page-widgets').'</a>. '.__('With your help, we can continue supporting and developing this plugin.', 'wp-page-widgets').'<br /><a href="' . admin_url('options-general.php?page=pw-settings') . '"><small>'.__('Hide this donation message', 'wp-page-widgets').'</small></a>.</p></div>';
 				}
 				?>
 			</div>
 
 			<div style="padding: 5px;">
 			<!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
-				<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>">Widgets settings</a>)
-				&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> Customize
+				<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> Default (follow <a href="<?php echo admin_url('widgets.php') ?>"><?php _e('Widgets settings', 'wp-page-widgets'); ?></a>)
+				&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> <?php _e('Customize', 'wp-page-widgets'); ?>
 				<br class="clear" />
 			</div>
 
@@ -817,7 +824,7 @@ function pw_returnTaxonomyWidget() {
 								<div class="sidebar-name-arrow"><br /></div>
 								<h3><?php _e('Inactive Widgets'); ?>
 									<?php
-									if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {	
+									if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 									?>
 										<span><img src="<?php echo esc_url(admin_url('images/wpspin_light.gif')); ?>" class="ajax-feedback" title="" alt="" /></span>
 									<?php
@@ -853,7 +860,7 @@ function pw_returnTaxonomyWidget() {
 									<div class="sidebar-name-arrow"><br /></div>
 									<h3><?php echo esc_html($registered_sidebar['name']); ?>
 										<?php
-										if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {	
+										if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 										?>
 											<span><img src="<?php echo esc_url(admin_url('images/wpspin_light.gif')); ?>" class="ajax-feedback" title="" alt="" /></span>
 										<?php
@@ -887,6 +894,28 @@ function pw_returnTaxonomyWidget() {
 	exit;
 }
 
+function pw_ajax_remove_inactive_widget(){
+	check_ajax_referer('save-sidebar-widgets', 'savewidgets');
+
+	if (!current_user_can('edit_posts'))
+		die('-1');
+
+	if (!$_POST['post_id'])
+		die('-1');
+	
+	if (isset($_POST['post_id']))
+		$post_id = stripslashes($_POST['post_id']);
+	
+	$widgets = get_option('sidebars_widgets');
+	$widgets['wp_inactive_widgets'] = array();
+	update_option('sidebars_widgets', $widgets);
+	
+	$_sidebars_widgets = get_post_meta($post_id, '_sidebars_widgets', true);
+	$_sidebars_widgets['wp_inactive_widgets'] = array();
+	update_post_meta($post_id, '_sidebars_widgets', $_sidebars_widgets);
+	echo "ok";exit;
+}
+
 function pw_ajax_toggle_customize() {
 	$status = stripslashes($_POST['pw-customize-sidebars']);
 	$post_id = (int) $_POST['post_id'];
@@ -912,7 +941,7 @@ function pw_ajax_toggle_customize() {
 	// For search page
 	else if (!empty($search_page)) {
 		update_option('_pw_search_page', $status);
-		echo 'Updated search page option.';
+		_e('Updated search page option.', 'wp-page-widgets');
 	}
 
 	// For taxonomy page
@@ -974,12 +1003,12 @@ function pw_ajax_widgets_order() {
 	check_ajax_referer('save-sidebar-widgets', 'savewidgets');
 
 	if (!current_user_can('edit_posts')) {
-		print 'This user is not have access to edit theme options';
+		_e('This user is not have access to edit theme options', 'wp-page-widgets');
 		die('-1');
 	}
 
 	if (!$_POST['post_id'] && !$_POST['tag_id'] && !$_POST['search_page']) {
-		print 'Not post, taxonomy or search page.';
+		_e('Not post, taxonomy or search page.', 'wp-page-widgets');
 		die('-1');
 	}
 
@@ -1017,7 +1046,7 @@ function pw_ajax_widgets_order() {
 		print 'Saved ajax widgets order<br />';
 		die('1');
 	}
-	print 'Not save ajax widgets order';
+	_e('Not save ajax widgets order', 'wp-page-widgets');
 	die('-1');
 }
 
@@ -1032,18 +1061,18 @@ function pw_ajax_save_widget() {
 
 	if (!$_POST['post_id'] && !$_POST['tag_id'] && !$_POST['search_page'])
 		die('-1');
-	
+
 	if (isset($_POST['post_id']))
 		$post_id = stripslashes($_POST['post_id']);
 	if (isset($_POST['tag_id']))
 		$tag_id = stripslashes($_POST['tag_id']);
 	if (isset($_POST['taxonomy']))
 		$taxonomy = stripslashes($_POST['taxonomy']);
-	
+
 	// For search page
 	if (isset($_POST['search_page']))
 		$search_page = stripslashes($_POST['search_page']);
-	
+
 	unset($_POST['savewidgets'], $_POST['action']);
 
 	do_action('load-widgets.php');
@@ -1174,7 +1203,7 @@ function pw_filter_widgets($sidebars_widgets) {
 	if (
 			( is_admin()
 			&& !in_array($pagenow, array('post-new.php', 'post.php', 'edit-tags.php'))
-			&& (!in_array($pagenow, array('admin.php')) && (isset($_GET['page']) && ($_GET['page'] == 'pw-front-page') || isset($_GET['page']) && $_GET['page'] == 'pw-search-page')) 
+			&& (!in_array($pagenow, array('admin.php')) && (isset($_GET['page']) && ($_GET['page'] == 'pw-front-page') || isset($_GET['page']) && $_GET['page'] == 'pw-search-page'))
 			)
 			|| (!is_admin() && !is_singular() && !is_search() && empty($objTaxonomy['taxonomy']))
 	) {
@@ -1233,7 +1262,7 @@ function pw_filter_widget_display_instance($instance, $widget, $args) {
 		$enable_customize = get_option('_pw_search_page', true);
 		if ($enable_customize == 'yes') {
 			$widget_instance = get_option('widget_search_' . $widget->id_base);
-			
+
 			/*
 			  print '<pre>';
 			  var_dump($widget->number);
@@ -1241,7 +1270,7 @@ function pw_filter_widget_display_instance($instance, $widget, $args) {
 			  var_dump($widget_instance[3]);
 			  print '</pre>';
 			  //exit();	//
-			 * 
+			 *
 			 */
 
 			if ($widget_instance && isset($widget_instance[$widget->number])) {
@@ -1262,15 +1291,15 @@ function pw_filter_widget_display_instance($instance, $widget, $args) {
 				$instance = $widget_instance[$widget->number];
 			}
 		}
-		
+
 	} elseif (!empty($post->ID)) {
 		$enable_customize = get_post_meta($post->ID, '_customize_sidebars', true);
 		if ($enable_customize == 'yes' && is_singular()) {
 			$widget_instance = get_option('widget_' . $post->ID . '_' . $widget->id_base);
-			
+
 			if ($widget_instance && isset($widget_instance[$widget->number])) {
 				$instance = $widget_instance[$widget->number];
-				
+
 			}
 		}
 	}
@@ -1303,7 +1332,7 @@ function pw_filter_widget_form_instance($instance, $widget) {
 			  var_dump($widget_instance);
 			  print '</pre>';
 			  exit();	// */
-			
+
 		} elseif (!$isTaxonomyEdit) {
 			$widget_instance = get_option('widget_' . $post->ID . '_' . $widget->id_base);
 		} elseif (!empty($objTaxonomy['taxonomy'])) {
@@ -1347,7 +1376,7 @@ function getTaxonomyAccess() {
 		'taxonomy' => ""
 	);
 
-	if (!is_admin() && (is_tax() || is_tag() || is_category() ) ) { //&& isset($objRequested)) { 
+	if (!is_admin() && (is_tax() || is_tag() || is_category() ) ) { //&& isset($objRequested)) {
 		$objRequested = $wp_query->queried_object;
 		if (isset($objRequested) && is_object($objRequested)) {
 			$return['term_id'] = isset($objRequested->term_id) ? $objRequested->term_id : "";
