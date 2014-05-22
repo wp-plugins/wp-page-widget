@@ -1,25 +1,29 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: wp_page_widgets\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-04-18 08:56+0100\n"
-"PO-Revision-Date: 2014-04-18 10:46+0100\n"
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
 "Last-Translator: Roy Janssen <info@rjnetwork.nl>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-KeywordsList: _;gettext;gettext_noop;__;_e\n"
-"X-Poedit-Basepath: .\n"
-"X-Poedit-SearchPath-0: .\n"
 
 #: wp-page-widgets.php:120
 msgid "Select an Image"
-msgstr ""
+msgstr "Selecteer een afbeelding"
 
 #: wp-page-widgets.php:121
 msgid "Insert Into Widget"
-msgstr ""
+msgstr "Invoegen in widget"
+
+#: wp-page-widgets.php:131
+msgid "Press the following button will remove all of these inactive widgets"
+msgstr "Druk op de volgende knop om al deze inactieve widgets te verwijderen"
+
+#: wp-page-widgets.php:132
+msgid "Remove inactive widgets"
+msgstr "Inactieve widgets verwijderen"
 
 #: wp-page-widgets.php:162
 #: wp-page-widgets.php:174
@@ -154,28 +158,28 @@ msgstr "alleen deze pagina"
 #: wp-page-widgets.php:661
 #: wp-page-widgets.php:805
 msgid "Available Widgets"
-msgstr ""
+msgstr "Beschikbare widgets"
 
 #: wp-page-widgets.php:326
 #: wp-page-widgets.php:519
 #: wp-page-widgets.php:661
 #: wp-page-widgets.php:805
 msgid "Deactivate"
-msgstr ""
+msgstr "Deactiveren"
 
 #: wp-page-widgets.php:329
 #: wp-page-widgets.php:522
 #: wp-page-widgets.php:664
 #: wp-page-widgets.php:808
 msgid "Drag widgets from here to a sidebar on the right to activate them. Drag widgets back here to deactivate them and delete their settings."
-msgstr ""
+msgstr "Sleep widgets vanaf hier naar een zijbalk rechts om ze te activeren. Sleep widgets terug om ze te deactiveren en de instellingen te verwijderen."
 
 #: wp-page-widgets.php:356
 #: wp-page-widgets.php:548
 #: wp-page-widgets.php:690
 #: wp-page-widgets.php:834
 msgid "Drag widgets here to remove them from the sidebar but keep their settings."
-msgstr ""
+msgstr "Sleep widgets naar hier om ze te verwijderen van de zijbalk maar de instellingen te bewaren."
 
 #: wp-page-widgets.php:416
 msgid "Page widgets for Front page - only latest posts option"
@@ -211,5 +215,5 @@ msgstr "Geen ajax voor het opslaan van widget volgorde."
 
 #: wp-page-widgets.php:1060
 msgid "An error has occured. Please reload the page and try again."
-msgstr ""
+msgstr "Er is een fout opgetreden. Herlaad de pagina en probeer opnieuw."
 

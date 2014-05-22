@@ -92,3 +92,8 @@
 .widget .widget-title .new-widget-action:after{
 	content:"";
 }
+
+/*	Simple Link List Widget plugin	*/
+.sllw-edit-item {
+	max-width: 390px;
+}

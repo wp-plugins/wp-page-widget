@@ -126,7 +126,17 @@ function pw_print_scripts() {
 			'button_title' => __( 'Insert Into Widget', 'image_widget' ),
 			) );
 		}
+		
+		// Simple Link List Widget plugin support
+		if (is_plugin_active('simple-link-list-widget/simple-link-list-widget.php')) {
+			wp_enqueue_script( 'sllw-sort-js', WP_PLUGIN_URL .'/simple-link-list-widget/js/sllw-sort.js');
+		}
+		
 		wp_enqueue_script('pw-widgets', plugin_dir_url(__FILE__) . 'assets/js/page-widgets.js', array('jquery', 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable'), PAGE_WIDGET_VERSION, true);
+		wp_localize_script( 'pw-widgets', 'wp_page_widgets', array(
+			'remove_inactive_widgets_text'  => __('Press the following button will remove all of these inactive widgets', 'wp-page-widgets'),
+			'remove_inactive_widgets' => __( 'Remove inactive widgets', 'wp-page-widgets' ),
+		) );
 	}
 }
 
@@ -143,6 +153,12 @@ function pw_print_styles() {
 		if (is_plugin_active('custom-field-list-widget/widget_custom_field_list.php')) {
 			wp_enqueue_style('pw-widgets3', WP_PLUGIN_URL . '/custom-field-list-widget/widget_custom_field_list_widgetsettings.css', array());
 		}
+		
+		// Simple Link List Widget plugin support
+		if (is_plugin_active('simple-link-list-widget/simple-link-list-widget.php')) {
+			wp_enqueue_style( 'sllw-css', WP_PLUGIN_URL .'/simple-link-list-widget/css/sllw.css');
+		}
+		
 		if ( version_compare( get_bloginfo('version'), '3.8', '<' ) ) {
 			wp_enqueue_style('pw-widgets', plugin_dir_url(__FILE__) . 'assets/css/page-widgets.css', array(), PAGE_WIDGET_VERSION);
 		}
