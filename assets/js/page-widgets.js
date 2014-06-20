@@ -4,7 +4,8 @@ var wpPWidgets;
 	wpPWidgets = {
 
 		init : function() {
-			var rem, sidebars = $('div.widgets-sortables'), the_id;
+			var rem, sidebars = $('div.widgets-sortables'), self = this, chooser = $('.widgets-chooser'),
+			selectSidebar = chooser.find('.widgets-chooser-sidebars'), the_id;
 
 			$('#widgets-right').children('.widgets-holder-wrap').children('.sidebar-name').click(function(){
 				var c = $(this).siblings('.widgets-sortables'), p = $(this).parent();
@@ -31,7 +32,7 @@ var wpPWidgets;
 					$(this).prepend('<a href="#available-widgets" class="new-widget-action hide-if-no-js"></a>');
 				}
 			});
-			$('a.widget-action, a.new-widget-action').live('click', function(){
+			$('.widget-liquid-right .widget-title').live('click', function(){
 				var css = {}, widget = $(this).closest('div.widget'), inside = widget.children('.widget-inside'), w = parseInt( widget.find('input.widget-width').val(), 10 );
 
 				if ( inside.is(':hidden') ) {
@@ -174,6 +175,70 @@ var wpPWidgets;
 					$('#removing-widget').hide().children('span').html('');
 				}
 			});
+
+			// Area Chooser
+			$( '#widgets-right .widgets-holder-wrap' ).each( function( index, element ) {
+				var $element = $( element ),
+					name = $element.find( '.sidebar-name h3' ).text(),
+					id = $element.find( '.widgets-sortables' ).attr( 'id' ),
+					li = $('<li tabindex="0">').text( $.trim( name ) );
+
+				if ( index === 0 ) {
+					li.addClass( 'widgets-chooser-selected' );
+				}
+
+				selectSidebar.append( li );
+				li.data( 'sidebarId', id );
+			});
+
+			$( '#available-widgets .widget .widget-title' ).on( 'click.widgets-chooser', function() {
+				var $widget = $(this).closest( '.widget' );
+
+				if ( $widget.hasClass( 'widget-in-question' ) || $( '#widgets-left' ).hasClass( 'chooser' ) ) {
+					self.closeChooser();
+				} else {
+					// Open the chooser
+					self.clearWidgetSelection();
+					$( '#widgets-left' ).addClass( 'chooser' );
+					$widget.addClass( 'widget-in-question' ).children( '.widget-description' ).after( chooser );
+
+					chooser.slideDown( 300, function() {
+						selectSidebar.find('.widgets-chooser-selected').focus();
+					});
+
+					selectSidebar.find( 'li' ).on( 'focusin.widgets-chooser', function() {
+						selectSidebar.find('.widgets-chooser-selected').removeClass( 'widgets-chooser-selected' );
+						$(this).addClass( 'widgets-chooser-selected' );
+					} );
+				}
+			});
+
+			// Add event handlers
+			chooser.on( 'click.widgets-chooser', function( event ) {
+				var $target = $( event.target );
+
+				if ( $target.hasClass('button-primary') ) {
+					self.addWidget( chooser );
+					self.closeChooser();
+				} else if ( $target.hasClass('button-secondary') ) {
+					self.closeChooser();
+				}
+				return false;
+			}).on( 'keyup.widgets-chooser', function( event ) {
+				if ( event.which === $.ui.keyCode.ENTER ) {
+					if ( $( event.target ).hasClass('button-secondary') ) {
+						// Close instead of adding when pressing Enter on the Cancel button
+						self.closeChooser();
+					} else {
+						self.addWidget( chooser );
+						self.closeChooser();
+					}
+				} else if ( event.which === $.ui.keyCode.ESCAPE ) {
+					self.closeChooser();
+				}
+				return false;
+			});
+
 		},
 
 		saveOrder : function(sb) {
@@ -341,10 +406,92 @@ var wpPWidgets;
 			});
 		},
 
+		addWidget: function( chooser ) {
+			var widget, widgetId, add, n, viewportTop, viewportBottom, sidebarBounds,
+				sidebarId = chooser.find( '.widgets-chooser-selected' ).data('sidebarId'),
+				sidebar = $( '#' + sidebarId );
+				// alert(sidebarId);
+
+			widget = $('#available-widgets').find('.widget-in-question').clone();
+			widgetId = widget.attr('id');
+			add = widget.find( 'input.add_new' ).val();
+			n = widget.find( 'input.multi_number' ).val();
+
+			//display
+			//widget.find('.widget-inside').show();
+			//console.log(widget);
+
+			// Remove the cloned chooser from the widget
+			widget.find('.widgets-chooser').remove();
+
+			if ( 'multi' === add ) {
+				widget.html(
+					widget.html().replace( /<[^<>]+>/g, function(m) {
+						return m.replace( /__i__|%i%/g, n );
+					})
+				);
+
+				widget.attr( 'id', widgetId.replace( '__i__', n ) );
+				n++;
+				$( '#' + widgetId ).find('input.multi_number').val(n);
+			} else if ( 'single' === add ) {
+				widget.attr( 'id', 'new-' + widgetId );
+				$( '#' + widgetId ).hide();
+			}
+
+			// Open the widgets container
+			sidebar.closest( '.widgets-holder-wrap' ).removeClass('closed');
+
+			sidebar.append( widget );
+			sidebar.sortable('refresh');
+
+			wpPWidgets.save( widget, 0, 0, 1 );
+			// No longer "new" widget
+			widget.find( 'input.add_new' ).val('');
+
+			/*
+			 * Check if any part of the sidebar is visible in the viewport. If it is, don't scroll.
+			 * Otherwise, scroll up to so the sidebar is in view.
+			 *
+			 * We do this by comparing the top and bottom, of the sidebar so see if they are within
+			 * the bounds of the viewport.
+			 */
+			viewportTop = $(window).scrollTop();
+			viewportBottom = viewportTop + $(window).height();
+			sidebarBounds = sidebar.offset();
+
+			sidebarBounds.bottom = sidebarBounds.top + sidebar.outerHeight();
+
+			if ( viewportTop > sidebarBounds.bottom || viewportBottom < sidebarBounds.top ) {
+				$( 'html, body' ).animate({
+					scrollTop: sidebarBounds.top - 130
+				}, 200 );
+			}
+
+			window.setTimeout( function() {
+				// Cannot use a callback in the animation above as it fires twice,
+				// have to queue this "by hand".
+				widget.find( '.widget-title' ).trigger('click');
+			}, 250 );
+		},
+
 		close : function(widget) {
 			widget.children('.widget-inside').slideUp('fast', function(){
 				widget.css({'width':'','marginLeft':''});
 			});
+		},
+		closeChooser: function() {
+			var self = this;
+
+			$( '.widgets-chooser' ).slideUp( 200, function() {
+				$( '#wpbody-content' ).append( this );
+				self.clearWidgetSelection();
+			});
+		},
+
+		clearWidgetSelection: function() {
+			$( '#widgets-left' ).removeClass( 'chooser' );
+			$( '.widget-in-question' ).removeClass( 'widget-in-question' );
 		}
 	};
 

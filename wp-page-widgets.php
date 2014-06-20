@@ -4,11 +4,11 @@
   Plugin URI: http://www.codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 2.4
+  Version: 2.5
   Author URI: http://www.codeandmore.com/
  */
 
-define('PAGE_WIDGET_VERSION', '2.4');
+define('PAGE_WIDGET_VERSION', '2.5');
 
 /* Hooks */
 add_action('plugins_loaded', 'pw_load_plugin_textdomain');
@@ -53,54 +53,7 @@ function pw_init() {
 		}
 		$upgraded = true;
 	}
-
-	if (version_compare($current_version, '1.2', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-
-	if (version_compare($current_version, '1.3', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-
-	if (version_compare($current_version, '1.4', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '1.5', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '1.6', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '1.7', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '1.8', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '1.9', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '2.0', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '2.1', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '2.2', '<')) {
-		// do nothing
-		$upgraded = true;
-	}
-	if (version_compare($current_version, '2.3', '<')) {
+	if (version_compare($current_version, '2.5', '<')) {
 		// do nothing
 		$upgraded = true;
 	}
@@ -417,7 +370,6 @@ function pw_search_page() {
 							?>
 						</div>
 					</div>
-
 					<form action="" method="post">
 						<?php wp_nonce_field('save-sidebar-widgets', '_wpnonce_widgets', false); ?>
 					</form>
@@ -617,6 +569,13 @@ function pw_metabox_content($post) {
 		<br class="clear" />
 
 	</div><!-- End #pw-sidebars-customize -->
+	<div class="widgets-chooser">
+		<ul class="widgets-chooser-sidebars"></ul>
+		<div class="widgets-chooser-actions">
+			<button class="button-secondary"><?php _e( 'Cancel' ); ?></button>
+			<button class="button-primary"><?php _e( 'Add Widget' ); ?></button>
+		</div>
+	</div>
 	<?php
 }
 

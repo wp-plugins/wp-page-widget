@@ -56,6 +56,8 @@ The interface is integrated to category/taxonomy editing screen just like you ed
 
 
 == Changelog ==
+= 2.5 (2014-06-20) =
+* Add support for Add Widget button on Text Widget
 = 2.4 (2014-05-16) =
 * Multi languages support. Added Dutch language pack - thanks to Roy Janssen
 = 2.3 (2014-03-27) =
