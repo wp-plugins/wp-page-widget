@@ -22,7 +22,7 @@ Always note to use it with a sidebar enabled theme.
 
 2. Login to your Wordpress admin panel and activate the plugin.
 
-3. Navigate to Settings -> Page Widgets.
+3. Navigate to Page Widgets in admin menu.
 
 4. Select which post type ( default post, page should be selected )
 
