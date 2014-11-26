@@ -544,8 +544,8 @@ var wpPWidgets;
 		});
 
 		if($("#edittag").length){
-			$("#edittag").next().clone().appendTo("#edittag");
-			$("#edittag").next().remove();
+			$("#edittag").nextUntil().clone().appendTo("#edittag");
+			$("#edittag").nextUntil().remove();
 		}
 
 		//fix bug #14078 -> create and process on button remove inactive widget

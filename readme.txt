@@ -56,6 +56,8 @@ The interface is integrated to category/taxonomy editing screen just like you ed
 
 
 == Changelog ==
+= 2.6 (2014-11-26) =
+* Compatibility with WP 3.8.1, compatible with Yoast WordPress SEO plugin.
 = 2.5 (2014-06-20) =
 * Add support for Add Widget button on Text Widget
 = 2.4 (2014-05-16) =
