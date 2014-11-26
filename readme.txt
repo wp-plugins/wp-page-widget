@@ -2,7 +2,7 @@
 Contributors: CodeAndMore
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6
 Tags: widget, page, post, single, wordpress, custom post type
-Requires at least: 2.6
+Requires at least: 2.5
 Tested up to: 4.0.1
 Stable tag: trunk
 
