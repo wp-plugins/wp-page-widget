@@ -2,8 +2,8 @@
 Contributors: CodeAndMore
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X2CJ88BHMLAT6
 Tags: widget, page, post, single, wordpress, custom post type
-Requires at least: 2.5
-Tested up to: 4.0.1
+Requires at least: 2.7
+Tested up to: 4.2.2
 Stable tag: trunk
 
 Select widgets for each page / post / custom post type. For every single page / post / custom post type
@@ -56,6 +56,8 @@ The interface is integrated to category/taxonomy editing screen just like you ed
 
 
 == Changelog ==
+= 2.7 (2015-06-18) =
+* Fix bug drag & drop sortable.
 = 2.6 (2014-11-26) =
 * Compatibility with WP 4.0.1, compatible with Yoast WordPress SEO plugin.
 = 2.5 (2014-06-20) =

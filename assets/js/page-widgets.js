@@ -99,7 +99,7 @@ var wpPWidgets;
 				handle: '> .widget-top > .widget-title',
 				cursor: 'move',
 				distance: 2,
-				containment: 'document',
+				containment: '#pw-widgets',
 				start: function(e,ui) {
 					wpPWidgets.fixWebkit(1);
 					ui.item.children('.widget-inside').hide();
@@ -123,10 +123,10 @@ var wpPWidgets;
 
 					var add = ui.item.find('input.add_new').val(),
 						n = ui.item.find('input.multi_number').val(),
-					//id = ui.item.attr('id'),
+						//id = ui.item.attr('id'),
 						id = the_id,
 						sb = $(this).attr('id');
-//					console.log(ui.item);
+					//console.log(ui.item);
 					ui.item.css({'marginLeft':'','width':''});
 					wpPWidgets.fixWebkit();
 					if ( add ) {
@@ -159,7 +159,8 @@ var wpPWidgets;
 				},
 				drop: function(e,ui) {
 					ui.draggable.addClass('deleting');
-					$('#removing-widget').hide().children('span').html('');
+					//$('#removing-widget').hide().children('span').html('');
+					$('#removing-widget').hide().children('span').empty();
 				},
 				over: function(e,ui) {
 					ui.draggable.addClass('deleting');
@@ -172,7 +173,8 @@ var wpPWidgets;
 				out: function(e,ui) {
 					ui.draggable.removeClass('deleting');
 					$('div.widget-placeholder').show();
-					$('#removing-widget').hide().children('span').html('');
+					//$('#removing-widget').hide().children('span').html('');
+					$('#removing-widget').hide().children('span').empty();
 				}
 			});
 

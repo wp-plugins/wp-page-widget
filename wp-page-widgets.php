@@ -4,11 +4,11 @@
   Plugin URI: http://www.codeandmore.com/products/wordpress-plugins/wp-page-widget/
   Description: Allow users to customize Widgets per page.
   Author: CodeAndMore
-  Version: 2.6
+  Version: 2.7
   Author URI: http://www.codeandmore.com/
  */
 
-define('PAGE_WIDGET_VERSION', '2.6');
+define('PAGE_WIDGET_VERSION', '2.7');
 
 /* Hooks */
 add_action('plugins_loaded', 'pw_load_plugin_textdomain');
@@ -473,7 +473,7 @@ function pw_metabox_content($post) {
 	</div>
 
 	<div style="padding: 5px;">
-	<!--	<a id="pw-button-customize" class="<?php echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
+	<!--	<a id="pw-button-customize" class="<?php //echo $pw_class ?>" href="#"><span class="customize">Customize</span><span class="default">Default</span></a>-->
 		<input type="radio" class="pw-toggle-customize" name="pw-customize-sidebars" value="no" <?php checked($customize, 'no') ?> /> <?php _e('Default', 'wp-page-widgets'); ?> (<?php _e('follow', 'wp-page-widgets');?> <a href="<?php echo admin_url('widgets.php') ?>"><?php _e('Widgets settings', 'wp-page-widgets'); ?></a>)
 		&nbsp;&nbsp;&nbsp;<input class="pw-toggle-customize" type="radio" name="pw-customize-sidebars" value="yes" <?php checked($customize, 'yes') ?> /> <?php _e('Customize', 'wp-page-widgets'); ?>
 		<br class="clear" />
